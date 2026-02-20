@@ -1,0 +1,595 @@
+AI Coding Assistant Spec — Event UI (Responsive, Elegant, UI-Only) — UPDATED
+0) Goal
+
+Build a modern responsive event-handling web UI with 3 distinct experiences:
+
+Public (anonymous) browsing
+
+Logged-in user view (same header, user menu + “My Events”)
+
+Admin view (separate layout/menu)
+
+✅ UI only (no real backend, no Supabase integration yet).
+✅ Use mock data + strongly typed models.
+✅ Elegant, minimal, simple colors, excellent spacing/typography.
+
+1) Tech stack (UI-only MVP)
+
+Next.js (App Router) + TypeScript
+
+Tailwind CSS
+
+shadcn/ui (clean, accessible components)
+
+lucide-react icons
+
+Optional: clsx + tailwind-merge
+
+2) Project setup instructions
+Create app
+npx create-next-app@latest event-ui --ts --app --eslint --tailwind
+cd event-ui
+
+Add shadcn/ui
+npx shadcn@latest init
+
+
+Add components:
+
+npx shadcn@latest add button card badge dialog dropdown-menu tabs avatar separator input textarea skeleton toast sheet table
+
+Icons
+npm i lucide-react
+
+
+Optional helpers:
+
+npm i clsx tailwind-merge
+
+3) Design requirements (UI/UX rules)
+
+Visual style
+
+Minimal, elegant, modern; simple neutral palette
+
+Soft background, white cards, subtle borders
+
+Rounded corners (xl/2xl), consistent spacing
+
+Use one subtle accent (for primary buttons/links)
+
+Responsive
+
+Mobile-first
+
+Header collapses into hamburger on mobile
+
+Event grid: 1 col mobile → 2 col tablet → 3 col desktop
+
+Admin sidebar collapses into a slide-over (Sheet) on mobile
+
+Accessibility
+
+Keyboard-friendly dialogs/menus
+
+Clear focus states (don’t remove outlines)
+
+Micro-interactions
+
+Subtle hover + transition only (no heavy animations)
+
+4) Information architecture (routes)
+Public
+
+/ → landing (org section + event list)
+
+/events/[id] → event details (public)
+
+Logged-in user
+
+/me → “My Events”
+
+/me/events/[id] → event details + ticket block
+
+Admin
+
+/admin → admin dashboard (events list)
+
+/admin/events/[id] → admin event overview + tabs
+
+5) Strongly typed UI models (UPDATED)
+
+Create: src/models/
+
+src/models/event.ts
+
+Important updates required:
+
+Add rating
+
+Add eventDate
+
+Recommended types:
+
+export type EventRating = {
+  average: number; // 0..5
+  count: number;   // number of ratings
+};
+
+export type Event = {
+  id: string;
+  title: string;
+  subtitle?: string;
+
+  // NEW
+  eventDate: string;     // ISO date (e.g., "2026-02-17")
+  rating?: EventRating;  // optional for now
+
+  statusId: string;      // from JSON
+  categoryId: string;    // from JSON
+  visibilityId: string;  // from JSON
+
+  startAt: string;       // ISO datetime
+  endAt?: string;        // ISO datetime
+
+  locationName?: string;
+  city?: string;
+
+  coverImageUrl?: string;
+
+  shortDescription: string;
+  description: string;
+
+  organizerName: string;
+};
+
+src/models/user.ts (UPDATED)
+
+Add displayName:
+
+export type UserRole = "guest" | "user" | "admin";
+
+export type AppUser = {
+  id: string;
+  name: string;         // internal / legal name
+  displayName: string;  // NEW: UI display
+  email: string;
+  role: UserRole;
+};
+
+src/models/ticket.ts
+export type Ticket = {
+  id: string;
+  eventId: string;
+  ticketNumber: string;
+  issuedToName: string;
+  issuedToEmail: string;
+};
+
+6) Enums in JSON (UPDATED requirement)
+
+Instead of TypeScript union enums, store these as JSON configs:
+
+Create: src/config/
+
+src/config/event-statuses.json
+[
+  { "id": "upcoming", "label": "Upcoming" },
+  { "id": "ongoing", "label": "Ongoing" },
+  { "id": "past", "label": "Past" }
+]
+
+src/config/event-visibility.json
+[
+  { "id": "public", "label": "Public" },
+  { "id": "private", "label": "Private" }
+]
+
+src/config/event-categories.json
+[
+  { "id": "music", "label": "Music" },
+  { "id": "sports", "label": "Sports" },
+  { "id": "community", "label": "Community" },
+  { "id": "workshop", "label": "Workshop" },
+  { "id": "other", "label": "Other" }
+]
+
+
+Create loader helpers: src/lib/lookups.ts
+
+Load JSON and expose:
+
+getStatusLabel(statusId)
+
+getCategoryLabel(categoryId)
+
+getVisibilityLabel(visibilityId)
+
+Also expose allStatuses, allCategories, etc. for filter UI.
+
+✅ Keep strong typing by defining:
+
+type LookupItem = { id: string; label: string }
+
+Validate IDs at runtime (small helper) and gracefully fallback to “Unknown”.
+
+7) Mock data + fake auth state
+
+Create:
+
+src/mock/events.ts → mockEvents: Event[] (include ratings + eventDate)
+
+src/mock/users.ts → mockUsers: AppUser[] (include displayName)
+
+src/mock/userEvents.ts → mapping: userId -> eventIds[]
+
+src/mock/tickets.ts → mapping: (userId,eventId) -> Ticket
+
+Fake session store
+
+Create src/state/session.tsx:
+
+Use React Context (simple).
+
+State:
+
+currentUser: AppUser | null
+
+loginAs(role: "user" | "admin")
+
+logout()
+
+Login UI is a dialog with:
+
+“Continue as User”
+
+“Continue as Admin”
+
+8) Layouts (critical)
+Public/User layout
+
+src/components/layout/PublicLayout.tsx
+
+Top bar:
+
+Left: logo mark + app name
+
+Center: nav links (Home, Events, About)
+
+Far right:
+
+if logged out: Login button
+
+if logged in: Avatar + displayName dropdown (Logout)
+
+Mobile:
+
+Use shadcn Sheet for hamburger menu.
+
+Admin layout
+
+src/components/layout/AdminLayout.tsx
+
+Sidebar navigation (Dashboard, Events, Settings-disabled)
+
+Top bar: Admin badge + user dropdown/logout
+
+On mobile sidebar becomes Sheet
+
+9) Reusable UI components (build these)
+
+Create under src/components/:
+
+Header & auth
+
+AppHeader
+
+LoginDialog
+
+UserMenuDropdown
+
+Event UI
+
+EventCard
+
+EventListGrid
+
+EventDetailHeader
+
+EventMetaRow
+
+RatingBadge (small star + value)
+
+RatingSortDropdown (NEW UX improvement)
+
+CategoryFilterPills (UI-only)
+
+Empty/loading
+
+EmptyState
+
+Optional EventCardSkeleton
+
+Admin
+
+AdminEventTable
+
+AdminEventSummaryCards
+
+10) Page-by-page UI specs
+/ Public landing
+
+Sections:
+
+Hero
+
+Org name + tagline
+
+Short description
+
+Primary CTA: “Browse Events” (scrolls to events section)
+
+Organization section
+
+Two-column:
+
+left: mission/description + bullet points
+
+right: image card placeholder
+
+On mobile becomes stacked.
+
+Events section
+
+Title row: “Events”
+
+Filters:
+
+Category pills (All + categories from JSON)
+
+Sort dropdown (NEW): Sort by Rating, Date, Upcoming first
+
+Grid of EventCard
+
+Click → /events/[id]
+
+EventCard requirements
+
+Cover image (or gradient placeholder)
+
+Title + shortDescription
+
+Badges: status + category
+
+Meta: eventDate + city/location
+
+RatingBadge (if rating exists)
+
+Hover: subtle lift + border highlight
+
+/events/[id] Public event details
+
+Cover banner (image or gradient)
+
+Title + badges
+
+Meta: eventDate, time range, location
+
+Description
+
+Sidebar card (desktop):
+
+“Login to view tickets / manage registrations (later)”
+
+Login button opens dialog
+
+/me My Events
+
+Title: “My Events”
+
+If none: EmptyState
+
+Else: list/grid of user-registered events
+
+Sorting available: date or rating
+
+/me/events/[id] User event details
+
+Same as public + ticket area:
+
+Ticket Card:
+
+ticketNumber
+
+issuedToName/email
+
+QR placeholder square (Skeleton or bordered empty box)
+
+Disabled button: “Download Ticket (Coming soon)”
+
+/admin Admin dashboard
+
+Title: “Events”
+
+Admin table columns:
+
+Title
+
+EventDate
+
+Status
+
+Visibility
+
+Category
+
+Rating (avg + count)
+
+Row click → /admin/events/[id]
+
+/admin/events/[id] Admin event overview
+
+Header: title + badges + rating
+
+Summary cards (placeholder numbers):
+
+Tickets issued
+
+Registrations
+
+Status
+
+Tabs:
+
+Overview (show description + metadata)
+
+Attendees (placeholder)
+
+Tickets (placeholder)
+
+11) Navigation & guards (UI-only)
+
+If user visits /me logged out:
+
+Show friendly message + Login button
+
+If user visits /admin without admin:
+
+Show “Not authorized” page (clean UI)
+
+Admin layout wraps only admin routes
+
+12) UX improvement (requested) — Rating-based browsing (small but valuable)
+
+Implement:
+
+On public event list:
+
+Sort dropdown includes “Top Rated”
+
+If rating missing, treat as lowest
+
+On EventCard:
+
+Show rating badge like: ★ 4.7 (132) (subtle)
+
+Optional:
+
+Add a “Top Rated” quick filter pill (UI-only)
+
+13) Visual polish checklist (must follow)
+
+Container: mx-auto max-w-6xl px-4
+
+Section spacing: consistent vertical rhythm (py-8, gap-6)
+
+Cards:
+
+subtle border
+
+gentle hover
+
+avoid heavy shadows
+
+Typography:
+
+Titles: text-2xl font-semibold tracking-tight
+
+Body: text-sm text-muted-foreground
+
+Buttons:
+
+Primary used sparingly
+
+Badges:
+
+Soft, not neon
+
+Use consistent icons (lucide)
+
+14) Deliverables
+
+Agent must produce:
+
+Working Next.js app with all routes
+
+Responsive public + user + admin layouts
+
+Typed models + JSON configs for statuses/categories/visibility
+
+Mock data wired to UI
+
+Login dialog + fake session state
+
+Clean reusable components
+
+Rating-based sorting + rating badge
+
+15) Definition of Done
+
+npm run dev works
+
+You can:
+
+Browse public pages
+
+Open login dialog → choose user/admin
+
+See /me content change by login state
+
+Admin routes show admin layout & table
+
+Sort events by rating
+
+UI looks clean, modern, responsive
+
+Recommended folder structure (implement exactly)
+src/
+  app/
+    layout.tsx
+    page.tsx
+    events/[id]/page.tsx
+    me/page.tsx
+    me/events/[id]/page.tsx
+    admin/layout.tsx
+    admin/page.tsx
+    admin/events/[id]/page.tsx
+    not-authorized/page.tsx
+  components/
+    layout/
+      PublicLayout.tsx
+      AdminLayout.tsx
+    header/
+      AppHeader.tsx
+      LoginDialog.tsx
+      UserMenuDropdown.tsx
+    events/
+      EventCard.tsx
+      EventListGrid.tsx
+      EventDetailHeader.tsx
+      EventMetaRow.tsx
+      RatingBadge.tsx
+      RatingSortDropdown.tsx
+      CategoryFilterPills.tsx
+    admin/
+      AdminEventTable.tsx
+      AdminEventSummaryCards.tsx
+    ui/ (shadcn generated)
+  config/
+    event-statuses.json
+    event-visibility.json
+    event-categories.json
+  lib/
+    lookups.ts
+    format.ts
+  mock/
+    events.ts
+    users.ts
+    userEvents.ts
+    tickets.ts
+  models/
+    event.ts
+    user.ts
+    ticket.ts
+  state/
+    session.tsx

@@ -1,0 +1,21 @@
+<svg width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F72585;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7209B7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#grad3)"/>
+  <circle cx="200" cy="350" r="90" fill="#4CC9F0" opacity="0.3"/>
+  <circle cx="600" cy="150" r="70" fill="#F72585" opacity="0.3"/>
+  <circle cx="400" cy="100" r="40" fill="#FFC107" opacity="0.4"/>
+  <text x="400" y="190" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">
+    Volleyball &amp; Beach Party
+  </text>
+  <text x="400" y="245" font-family="Arial, sans-serif" font-size="32" fill="white" text-anchor="middle" opacity="0.9">
+    Summer 2026
+  </text>
+  <text x="400" y="310" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle" opacity="0.8">
+    🏐 Beach Volleyball • 🎵 Live Music • 🍔 BBQ
+  </text>
+</svg>

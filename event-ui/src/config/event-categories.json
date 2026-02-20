@@ -1,0 +1,7 @@
+[
+  { "id": "music", "label": "Music" },
+  { "id": "sports", "label": "Sports" },
+  { "id": "community", "label": "Community" },
+  { "id": "workshop", "label": "Workshop" },
+  { "id": "other", "label": "Other" }
+]

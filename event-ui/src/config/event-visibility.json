@@ -1,0 +1,4 @@
+[
+  { "id": "public", "label": "Public" },
+  { "id": "private", "label": "Private" }
+]

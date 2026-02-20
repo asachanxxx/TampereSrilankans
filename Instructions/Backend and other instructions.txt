@@ -1,0 +1,424 @@
+Complete Backend Architecture Specification
+
+Project: Event Management App
+Stack: Next.js (App Router) + Supabase
+Deployment: Vercel (Frontend + API) + Supabase (DB + Auth)
+Environment: Free tier optimized
+
+---
+
+# 1️⃣ Overall Architecture
+
+We are NOT building a traditional backend server.
+
+Architecture:
+
+Browser
+→ Vercel (Next.js UI + API routes if needed)
+→ Supabase (PostgreSQL + Auth + RLS)
+
+Rules:
+
+• No separate Node/Express server
+• No microservices
+• No container deployment to Supabase
+• Supabase is primary backend
+• Next.js API routes used only for protected business logic
+
+---
+
+# 2️⃣ Project Structure (Must Follow Exactly)
+
+Frontend root is:
+
+```
+src/event-ui
+```
+
+Backend logic must live inside this project.
+
+Final structure:
+
+```
+src/event-ui
+  /app
+  /backend
+    /services
+    /repositories
+    /policies
+    /validators
+  /models
+  /config
+  /lib
+```
+
+---
+
+# 3️⃣ Folder Responsibilities
+
+## `/backend/services`
+
+Business logic layer.
+
+Must include:
+• EventService
+• RegistrationService
+• TicketService
+• AdminService
+
+Services:
+
+* Contain business rules
+* Call repositories
+* Perform validations
+* Enforce role checks
+
+No database calls allowed directly from UI.
+
+---
+
+## `/backend/repositories`
+
+Data access layer.
+
+Responsibilities:
+• All Supabase queries
+• No business logic
+• Return typed models
+• Handle mapping from DB rows to domain models
+
+UI and services must never directly query Supabase.
+
+---
+
+## `/backend/policies`
+
+Define access rules:
+• isAdmin(user)
+• canEditEvent(user, event)
+• canViewPrivateEvent(user, event)
+
+These are logical policy checks (separate from RLS).
+
+---
+
+## `/backend/validators`
+
+Validate:
+• Event creation/update payload
+• Registration request
+• Ticket generation constraints
+• Enum IDs against JSON config
+
+All input validation must happen here.
+
+---
+
+## `/models`
+
+Shared domain models.
+
+Must include:
+• Event
+• AppUser (with displayName)
+• Ticket
+• Registration
+
+Models must be imported everywhere.
+Types must not be duplicated.
+
+---
+
+## `/config`
+
+Store enum definitions in JSON files:
+
+• event-statuses.json
+• event-visibility.json
+• event-categories.json
+
+Database stores only string IDs.
+
+Before insert/update:
+Backend must validate that IDs exist in JSON config.
+
+No database enum types allowed.
+
+---
+
+## `/lib`
+
+Must contain:
+
+• Supabase client initializer
+• Server-side Supabase client helper
+• Utility helpers (date formatting, etc.)
+
+Supabase client must be initialized in ONE place only.
+
+---
+
+# 4️⃣ Supabase Configuration Requirements
+
+## Authentication
+
+Enable:
+• Email/Password
+• Google OAuth
+• Facebook OAuth
+
+Redirect URLs must include:
+• Local development
+• Production URL
+
+---
+
+## Profiles Table
+
+Create `profiles` table:
+
+Fields:
+• id (uuid, references auth.users.id)
+• display_name
+• role ('user' | 'admin')
+• created_at
+
+Role must not be trusted from frontend.
+Always verify from database.
+
+---
+
+# 5️⃣ Database Schema (Required Tables)
+
+## events
+
+Fields:
+• id
+• title
+• subtitle
+• event_date
+• start_at
+• end_at
+• location_name
+• city
+• short_description
+• description
+• cover_image_url
+• status_id
+• category_id
+• visibility_id
+• rating_average
+• rating_count
+• organizer_name
+• created_at
+
+---
+
+## event_registrations
+
+Fields:
+• id
+• event_id (FK events.id)
+• user_id (FK auth.users.id)
+• registered_at
+
+Constraints:
+• Unique (event_id, user_id)
+
+---
+
+## tickets
+
+Fields:
+• id
+• event_id
+• user_id
+• ticket_number (unique)
+• issued_at
+
+---
+
+# 6️⃣ Row Level Security (Mandatory)
+
+Enable RLS on:
+
+• events
+• event_registrations
+• tickets
+• profiles
+
+Policies:
+
+### events
+
+• Public can read where visibility_id = 'public'
+• Admin can read all
+• Only admin can insert/update/delete
+
+### event_registrations
+
+• User can insert where user_id = auth.uid()
+• User can read only their own
+• Admin can read all
+
+### tickets
+
+• User can read only their own
+• Admin can read all
+
+### profiles
+
+• User can read/update own profile
+• Admin can read all
+
+RLS must be tested before UI integration.
+
+---
+
+# 7️⃣ Service Layer Rules
+
+Services must implement:
+
+### EventService
+
+• listPublicEvents()
+• listUserEvents(userId)
+• getEventDetails(eventId)
+• createEvent(adminOnly)
+• updateEvent(adminOnly)
+
+---
+
+### RegistrationService
+
+• registerForEvent(userId, eventId)
+• Prevent duplicate registration
+• Automatically generate ticket
+
+---
+
+### TicketService
+
+• generateUniqueTicketNumber()
+• fetchUserTicket(userId, eventId)
+
+---
+
+# 8️⃣ API Route Strategy (If Required)
+
+Create routes only when secure server-side execution is needed:
+
+```
+src/event-ui/app/api/events
+src/event-ui/app/api/registrations
+src/event-ui/app/api/admin
+```
+
+Each route must:
+• Validate session
+• Fetch user role
+• Call service layer
+• Return structured JSON
+
+No business logic inside route files.
+
+---
+
+# 9️⃣ Docker Usage
+
+Production:
+• No Docker deployment to Supabase
+• No Docker deployment to Vercel
+
+Local development:
+• Optional Docker Compose
+• Can run Supabase local stack
+• Can run Next.js locally
+
+Docker is development-only.
+
+---
+
+# 🔟 Free Tier Optimization Rules
+
+Design must:
+• Avoid unnecessary joins
+• Use pagination
+• Avoid large selects
+• Avoid heavy polling
+• Cache public event list if needed
+
+Keep operations lightweight.
+
+---
+
+# 11️⃣ Security Requirements
+
+• Never expose service_role key to frontend
+• Use anon public key in frontend only
+• Validate roles server-side
+• Never trust UI role state
+• Protect admin API routes
+
+---
+
+# 12️⃣ Migration Strategy
+
+Database schema must be:
+• Version controlled
+• Managed via Supabase migration system
+• Stored in repo
+
+Never manually modify production DB without migration tracking.
+
+---
+
+# 13️⃣ Deployment Flow
+
+1. Push to GitHub
+2. Vercel auto deploys frontend + API routes
+3. Supabase hosts DB + Auth
+4. Environment variables configured in Vercel
+5. RLS policies verified
+
+---
+
+# 14️⃣ Definition of Done
+
+Backend is considered complete when:
+
+• Supabase project configured
+• Tables created
+• RLS enabled and verified
+• Auth working (Email + Google + FB)
+• Profiles table linked
+• Roles enforced
+• Service layer clean
+• API routes protected
+• No business logic in UI
+• No direct Supabase calls from UI for sensitive actions
+
+---
+
+# 🚀 Final Architecture
+
+```
+Browser
+   ↓
+Vercel (Next.js UI + API routes)
+   ↓
+Supabase (Postgres + Auth + RLS)
+```
+
+Everything contained inside:
+
+```
+src/event-ui
+```
+
+---
+
+If you want next, I can generate:
+• A clean system architecture diagram
+• A production RLS checklist
+• Or a performance + scaling plan for 5,000 users 🚀

@@ -1,0 +1,181 @@
+UI-ONLY Auth (Login + Register + Google + Facebook) — One Page Spec
+Goal
+
+Build one responsive Auth page: /auth
+It contains:
+
+Social login buttons: Google + Facebook
+
+Tabs: Login | Register
+
+Forms (UI-only, no Supabase yet)
+
+On submit: call mock auth functions and redirect accordingly.
+
+Tech
+
+Next.js (App Router) + TypeScript + Tailwind + shadcn/ui + lucide-react
+
+Use shadcn components:
+
+Card, Tabs, Button, Input, Label, Separator, Alert, Toast
+
+Route
+
+Create: src/app/auth/page.tsx
+
+Layout & UX
+Structure (centered card)
+
+Full page background: soft neutral
+
+Center Card (max-w-md)
+
+Top:
+
+App logo + “Welcome back”
+
+Small subtitle: “Sign in to manage your events”
+
+Social buttons row:
+
+Continue with Google
+
+Continue with Facebook
+
+Divider:
+
+Separator with text “or”
+
+Tabs:
+
+Login | Register
+
+Login tab fields
+
+Email
+
+Password
+
+Button: Sign in
+
+Small link (UI-only): “Forgot password?”
+
+Register tab fields
+
+Display name
+
+Email
+
+Password
+
+Confirm password
+
+Checkbox: “I agree to Terms” (optional UI)
+
+Button: Create account
+
+Validation (client-side only)
+
+Email format
+
+Password min length (e.g., 8)
+
+Confirm password matches
+
+Show errors in Alert under the form
+
+Disable submit while “loading” (fake 600ms delay)
+
+Mobile rules
+
+Card is full width with padding
+
+Buttons stack vertically on small screens
+
+Mock auth state (UI-only)
+
+Create: src/state/session.tsx
+
+currentUser: AppUser | null
+
+loginMock({ email }) sets role user
+
+loginAdminMock() sets role admin (for testing only)
+
+registerMock({ displayName, email }) sets role user
+
+logout()
+
+Also create src/models/user.ts (already in your spec):
+
+Include displayName.
+
+Button behaviors (UI-only)
+Google/Facebook buttons
+
+Do NOT integrate OAuth now.
+
+On click:
+
+Show toast: “Google sign-in (UI only)”
+
+Call loginMock() and redirect to /me
+
+Login submit
+
+On submit success → redirect to /me
+
+Add hidden dev shortcut:
+
+A small link: “Login as Admin (demo)” → calls loginAdminMock() and redirects /admin
+
+Register submit
+
+On submit success → redirect to /me
+
+Components to create (clean reusable)
+
+Create:
+
+src/components/auth/AuthCard.tsx (wraps card layout)
+
+src/components/auth/SocialButtons.tsx
+
+src/components/auth/LoginForm.tsx
+
+src/components/auth/RegisterForm.tsx
+
+All components must be typed, clean, and responsive.
+
+Visual polish requirements
+
+Use consistent spacing: space-y-4/6
+
+Buttons: full width
+
+Inputs: consistent height
+
+Subtle icons:
+
+Google icon, Facebook icon (use lucide placeholders if needed)
+
+Soft shadows, rounded-2xl card
+
+No bright colors, use muted accent
+
+Definition of Done
+
+/auth looks modern and responsive
+
+Tabs switch smoothly
+
+Validation errors show clearly
+
+Social buttons + forms work with mock session
+
+Successful auth redirects:
+
+user → /me
+
+admin demo → /admin

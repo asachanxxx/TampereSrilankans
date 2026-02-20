@@ -1,0 +1,20 @@
+{
+  "name": "event-backend",
+  "version": "1.0.0",
+  "description": "Backend services, repositories, and business logic for Event Management App",
+  "main": "index.js",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["event-management", "backend", "supabase"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/ssr": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3"
+  }
+}
