@@ -1,0 +1,236 @@
+Full Instructions (OAuth-only + First-login Profile + Admin Separation)
+
+(UI now, Supabase later; no code examples)
+
+---
+
+### 1) Target behavior
+
+* App uses **Google + Facebook login only**.
+* No email/password inputs on UI.
+* After successful login:
+
+  * Create/ensure an **app user profile** exists in DB (later Supabase) on **first login**.
+  * Load the profile every login.
+  * Redirect:
+
+    * `role=user` → `/me`
+    * `role=admin` → `/admin`
+* Admin is **never chosen by user**. Only system assigns admin role.
+
+---
+
+### 2) Auth UI requirements (single page/modal)
+
+Create one Auth UI (page `/auth` or modal) with:
+
+* Button: **Continue with Google**
+* Button: **Continue with Facebook**
+* Small note: “Sign in with Google or Facebook.”
+* Error area (clear, user-friendly)
+* Loading states (disable buttons while processing)
+
+Optional:
+
+* “Why no password?” link opens small info dialog (UI only).
+
+---
+
+### 3) Application user profile concept (industry standard)
+
+Treat authentication identity and application profile as separate:
+
+* **Auth identity** (provider account) = handled by Supabase Auth later
+* **App profile** (role, display name, metadata) = stored in your `profiles` table
+
+Your backend/app must implement “**get or create profile**” logic:
+
+1. User authenticates with provider
+2. App receives authenticated user info (id, email, name)
+3. App checks if profile exists by `id`
+4. If not → create it
+5. Store resulting profile in session state
+
+---
+
+### 4) Required database contract (for later Supabase)
+
+Implement logic assuming these DB fields exist:
+
+**profiles**
+
+* `id` (uuid, same as auth user id)
+* `email`
+* `display_name`
+* `role` (`user` | `admin`)
+* `created_at`
+
+Rules:
+
+* On profile create → default `role = user`
+* `display_name` must exist (fallback if provider name missing)
+
+---
+
+### 5) Admin separation (choose one safe method)
+
+Do **one** of these (recommended: allowlist for MVP):
+
+**Method A — Manual promotion (simplest)**
+
+* Everyone created as `role=user`
+* You manually update one profile to `role=admin` in Supabase dashboard later
+
+**Method B — Admin email allowlist (recommended MVP)**
+
+* Maintain `ADMIN_EMAILS` in environment/config
+* On first login profile creation:
+
+  * if email in allowlist → `role=admin`
+  * else → `role=user`
+
+Hard rules:
+
+* No “Register as admin”
+* Never accept role from UI
+* Never store role only in frontend
+
+---
+
+### 6) Session & route gating requirements
+
+Implement a session state that stores:
+
+* `authStatus`: `loading | authenticated | anonymous`
+* `profile`: `AppUser | null` (contains `displayName`, `role`, etc.)
+* `lastAuthError` for UI display
+
+Route access rules:
+
+* Public routes always accessible
+* `/me*` requires authenticated user:
+
+  * If anonymous → show friendly “Please sign in” + button to `/auth`
+* `/admin*` requires admin:
+
+  * If anonymous → go to `/auth`
+  * If logged in but not admin → show “Not authorized” page
+
+Never rely on client-only checks for real security later; this is UI behavior now.
+
+---
+
+### 7) Auth flow (UI now, Supabase later)
+
+Your assistant must implement the following flows with adapters so Supabase can be plugged in later.
+
+#### 7.1 Login with Google
+
+On button click:
+
+1. Start loading state
+2. Call auth adapter `signInWithGoogle()`
+3. After callback success, call `handlePostAuth(authUser)`
+4. Clear loading state
+5. Redirect based on profile role
+
+#### 7.2 Login with Facebook
+
+Same as above using `signInWithFacebook()`
+
+#### 7.3 Logout
+
+1. Call auth adapter `signOut()`
+2. Clear session state
+3. Redirect to `/`
+
+---
+
+### 8) Post-auth “get or create profile” process (core requirement)
+
+Implement a single function used by both providers:
+
+**handlePostAuth(authUser)**
+
+1. Validate `authUser` has `id` and `email`
+2. Fetch profile by `id`
+3. If profile exists:
+
+   * load it into session
+4. If profile does not exist:
+
+   * compute displayName:
+
+     * provider name if present
+     * else email prefix
+   * compute role:
+
+     * `user` by default
+     * if allowlist enabled and email matches → `admin`
+   * create profile row
+   * then re-fetch profile (or use returned record)
+   * store in session
+
+This function must be idempotent and safe to call multiple times.
+
+---
+
+### 9) Validation & UX rules
+
+* DisplayName:
+
+  * trimmed
+  * minimum length (e.g., 2)
+  * fallback derived from email if missing
+* Error handling:
+
+  * Show human-readable errors in UI
+  * Provide “Try again” CTA
+* Loading:
+
+  * Prevent double clicks
+  * Provide spinner or subtle progress indicator
+
+---
+
+### 10) “Supabase later” integration readiness
+
+Even before Supabase is connected, architecture must support:
+
+* Swapping mock auth adapter with Supabase auth
+* Swapping mock profile repository with Supabase table calls
+* Keeping the same service-level contract:
+
+  * `signInWithGoogle()`, `signInWithFacebook()`, `signOut()`
+  * `getProfileById(id)`, `createProfile(data)`
+
+No UI components should directly call DB/auth implementation. They call the service.
+
+---
+
+### 11) Security rules to follow (now and later)
+
+* Never expose any “admin toggle” in UI
+* Never accept role from client input
+* Admin checks must use the profile loaded from DB (later Supabase)
+* Prepare to enforce RLS later:
+
+  * Users read/update only their profile
+  * Admin-only access to admin endpoints/data
+
+---
+
+### 12) Acceptance checklist (Definition of Done)
+
+* Auth UI shows only Google + Facebook buttons
+* Clicking either logs user in (mock for now) and produces a profile in app state
+* First login creates a profile (simulated now, DB later)
+* Subsequent logins load existing profile
+* Users redirect to `/me`, admins redirect to `/admin`
+* `/admin` blocked for non-admin users
+* Logout clears state and returns to public view
+
+---
+
+If you want, tell your preference: **Admin role assignment = Manual** or **Email allowlist**.
+If you don’t choose, default to **Email allowlist** for MVP.

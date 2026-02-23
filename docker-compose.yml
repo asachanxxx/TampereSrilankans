@@ -1,0 +1,23 @@
+services:
+  event-ui:
+    build:
+      context: .
+      dockerfile: ./event-ui/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./event-ui:/app/event-ui
+      - ./backend:/app/backend
+      - /app/event-ui/node_modules
+      - /app/event-ui/.next
+    working_dir: /app/event-ui
+    env_file:
+      - ./event-ui/.env.local
+    stdin_open: true
+    tty: true
+    networks:
+      - event-network
+
+networks:
+  event-network:
+    driver: bridge

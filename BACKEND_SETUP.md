@@ -87,49 +87,72 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key
 
 ---
 
-## 🔐 Step 4: Configure Authentication
+## 🔐 Step 4: Configure OAuth Authentication
 
-### Enable Email/Password Authentication
+**Important:** This application uses **OAuth-only authentication** (Google and Facebook). Email/password login is not available.
 
-1. Go to **Authentication** → **Providers**
-2. Find **Email** provider
-3. Enable it
-4. Set:
-   - **Confirm email**: OFF (for development) or ON (for production)
-   - **Secure password**: ON
+### Enable Google OAuth (Required)
 
-### Enable Google OAuth (Optional)
-
-1. Create Google OAuth credentials:
+1. **Create Google OAuth credentials:**
    - Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create new project
-   - Enable Google+ API
-   - Create OAuth 2.0 Client ID
+   - Create new project or select existing
+   - Go to **APIs & Services** → **Credentials**
+   - Click **Create Credentials** → **OAuth 2.0 Client ID**
+   - Choose **Web application**
    - Add authorized redirect URIs:
      ```
-     https://xxxxx.supabase.co/auth/v1/callback
+     https://vjqsoaxsgptswgnfjgye.supabase.co/auth/v1/callback
      http://localhost:3000/auth/callback
      ```
+   - Copy the **Client ID** and **Client Secret**
    
-2. In Supabase **Authentication** → **Providers**:
-   - Enable **Google** provider
+2. **Configure in Supabase:**
+   - Go to **Authentication** → **Providers**
+   - Find **Google** provider and enable it
    - Paste **Client ID** and **Client Secret**
+   - Click **Save**
 
-### Enable Facebook OAuth (Optional)
+### Enable Facebook OAuth (Required)
 
-1. Create Facebook App:
+1. **Create Facebook App:**
    - Go to [Facebook Developers](https://developers.facebook.com)
-   - Create new app
-   - Add Facebook Login product
-   - Add OAuth redirect URIs
+   - Click **Create App**
+   - Choose **Consumer** app type
+   - Fill in app details
+   - Go to **Settings** → **Basic**
+   - Copy **App ID** and **App Secret**
+   - Add **Facebook Login** product
+   - In Facebook Login settings, add OAuth redirect URI:
+     ```
+     https://vjqsoaxsgptswgnfjgye.supabase.co/auth/v1/callback
+     ```
 
-2. In Supabase **Authentication** → **Providers**:
-   - Enable **Facebook** provider
+2. **Configure in Supabase:**
+   - Go to **Authentication** → **Providers**
+   - Find **Facebook** provider and enable it
    - Paste **App ID** and **App Secret**
+   - Click **Save**
 
 ---
 
-## 👤 Step 5: Create Admin User
+## 👤 Step 5: Configure Admin Users
+
+You can make users admins in two ways:
+
+### Method A: Admin Email Allowlist (Automatic)
+
+1. Edit `event-ui/.env.local` file
+
+2. Add or update the `ADMIN_EMAILS` variable:
+   ```env
+   ADMIN_EMAILS=your-email@gmail.com,another-admin@gmail.com
+   ```
+
+3. When these users sign in with OAuth for the first time, they will automatically be assigned the admin role
+
+4. Restart the development server after changing environment variables
+
+### Method B: Manual Promotion (Database)
 
 1. Start your Next.js app:
    ```bash
@@ -137,17 +160,18 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key
    npm run dev
    ```
 
-2. Open http://localhost:3000
+2. Sign in with Google or Facebook at http://localhost:3000/auth
 
-3. Register a new account using the UI
+3. After signing in, go to Supabase dashboard → **Authentication** → **Users**
 
-4. After registration, go to Supabase dashboard → **Table Editor** → **profiles**
+4. Copy your **User ID** (UUID)
 
-5. Find your user row
+5. Go to **SQL Editor** and run:
+   ```sql
+   UPDATE profiles SET role = 'admin' WHERE id = 'your-user-id-here';
+   ```
 
-6. Edit the `role` column from `user` to `admin`
-
-7. Save changes
+6. Refresh the page - you should now see the Admin menu
 
 Your account now has admin privileges! 🎉
 

@@ -1,22 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { EventListGrid } from "@/components/events/EventListGrid";
 import { RatingSortDropdown, SortOption } from "@/components/events/RatingSortDropdown";
 import { EmptyState } from "@/components/events/EmptyState";
 import { Button } from "@/components/ui/button";
-import { LoginDialog } from "@/components/header/LoginDialog";
 import { useSession } from "@/state/session";
 import { mockEvents } from "@/mock/events";
 import { getUserEventIds } from "@/mock/userEvents";
+import { Loader2 } from "lucide-react";
 
 export default function MyEventsPage() {
-  const { currentUser } = useSession();
-  const [loginOpen, setLoginOpen] = useState(false);
+  const { authStatus, profile } = useSession();
   const [sortBy, setSortBy] = useState<SortOption>("date");
 
-  if (!currentUser) {
+  // Show loading state
+  if (authStatus === "loading") {
+    return (
+      <PublicLayout>
+        <div className="container mx-auto max-w-6xl px-4 py-16 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (authStatus === "anonymous" || !profile) {
     return (
       <PublicLayout>
         <div className="container mx-auto max-w-6xl px-4 py-16">
@@ -26,15 +38,16 @@ export default function MyEventsPage() {
             icon={undefined}
           />
           <div className="text-center mt-6">
-            <Button onClick={() => setLoginOpen(true)}>Login</Button>
+            <Button asChild>
+              <Link href="/auth">Login</Link>
+            </Button>
           </div>
         </div>
-        <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
       </PublicLayout>
     );
   }
 
-  const userEventIds = getUserEventIds(currentUser.id);
+  const userEventIds = getUserEventIds(profile.id);
   let userEvents = mockEvents.filter((event) => userEventIds.includes(event.id));
 
   // Sort events

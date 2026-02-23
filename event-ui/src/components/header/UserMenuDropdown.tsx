@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,16 +14,22 @@ import {
 import { useSession } from "@/state/session";
 
 export function UserMenuDropdown() {
-  const { currentUser, logout } = useSession();
+  const { profile, logout } = useSession();
+  const router = useRouter();
 
-  if (!currentUser) return null;
+  if (!profile) return null;
 
-  const initials = currentUser.displayName
+  const initials = profile.displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
 
   return (
     <DropdownMenu>
@@ -31,13 +38,13 @@ export function UserMenuDropdown() {
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
         </Avatar>
         <span className="hidden sm:inline text-sm font-medium">
-          {currentUser.displayName}
+          {profile.displayName}
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout} className="cursor-pointer">
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </DropdownMenuItem>

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env.local
+*.log
+.DS_Store
+coverage
+.vscode
+dist
+build
+event-ui/node_modules
+event-ui/.next
+backend/node_modules
+backend/dist

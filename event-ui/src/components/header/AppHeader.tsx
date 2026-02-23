@@ -15,7 +15,7 @@ import { useSession } from "@/state/session";
 import { UserMenuDropdown } from "./UserMenuDropdown";
 
 export function AppHeader() {
-  const { currentUser } = useSession();
+  const { authStatus, profile } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -48,7 +48,7 @@ export function AppHeader() {
                 {link.label}
               </Link>
             ))}
-            {currentUser && currentUser.role === "user" && (
+            {profile && profile.role === "user" && (
               <Link
                 href="/me"
                 className="text-sm font-medium transition-colors hover:text-primary"
@@ -60,8 +60,10 @@ export function AppHeader() {
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
-            {currentUser ? (
+            {authStatus === "authenticated" && profile ? (
               <UserMenuDropdown />
+            ) : authStatus === "loading" ? (
+              <div className="hidden md:block w-20 h-9" />
             ) : (
               <Button
                 asChild
@@ -94,7 +96,7 @@ export function AppHeader() {
                       {link.label}
                     </Link>
                   ))}
-                  {currentUser && currentUser.role === "user" && (
+                  {profile && profile.role === "user" && (
                     <Link
                       href="/me"
                       onClick={() => setMobileMenuOpen(false)}
@@ -103,7 +105,7 @@ export function AppHeader() {
                       My Events
                     </Link>
                   )}
-                  {!currentUser && (
+                  {authStatus === "anonymous" && (
                     <Button
                       asChild
                       size="sm"

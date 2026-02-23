@@ -1,56 +1,99 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { AppUser, UserRole } from "@/models/user";
-import { mockUsers } from "@/mock/users";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { AppUser } from "@/models/user";
+import { onAuthStateChange, signOut as authSignOut } from "@/services/authService";
+import { handlePostAuth } from "@/services/profileService";
+import type { Session } from "@supabase/supabase-js";
+
+type AuthStatus = "loading" | "authenticated" | "anonymous";
 
 type SessionContextType = {
-  currentUser: AppUser | null;
-  loginAs: (role: "user" | "admin") => void;
-  loginMock: (data: { email: string }) => void;
-  registerMock: (data: { displayName: string; email: string }) => void;
-  logout: () => void;
+  authStatus: AuthStatus;
+  profile: AppUser | null;
+  lastAuthError: string | null;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
+  const [profile, setProfile] = useState<AppUser | null>(null);
+  const [lastAuthError, setLastAuthError] = useState<string | null>(null);
 
-  const loginAs = (role: "user" | "admin") => {
-    // Find mock user with specified role
-    const user = mockUsers.find((u) => u.role === role);
-    if (user) {
-      setCurrentUser(user);
+  // Load profile from auth session
+  const loadProfile = async (session: Session | null) => {
+    if (!session?.user) {
+      setProfile(null);
+      setAuthStatus("anonymous");
+      return;
+    }
+
+    try {
+      // Get or create profile
+      const userProfile = await handlePostAuth(session.user);
+      setProfile(userProfile);
+      setAuthStatus("authenticated");
+      setLastAuthError(null);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      setLastAuthError(error instanceof Error ? error.message : "Failed to load profile");
+      setProfile(null);
+      setAuthStatus("anonymous");
     }
   };
 
-  const loginMock = (data: { email: string }) => {
-    // Find existing user by email or use first user
-    const user = mockUsers.find((u) => u.email === data.email) || mockUsers.find((u) => u.role === "user");
-    if (user) {
-      setCurrentUser(user);
-    }
-  };
+  // Initialize auth state listener
+  useEffect(() => {
+    // Subscribe to auth changes
+    const { data: { subscription } } = onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        await loadProfile(session);
+      } else if (event === "SIGNED_OUT") {
+        setProfile(null);
+        setAuthStatus("anonymous");
+      } else if (event === "INITIAL_SESSION") {
+        await loadProfile(session);
+      }
+    });
 
-  const registerMock = (data: { displayName: string; email: string }) => {
-    // Create a new user (in reality, this would be an API call)
-    const newUser: AppUser = {
-      id: `user-${Date.now()}`,
-      name: data.displayName,
-      displayName: data.displayName,
-      email: data.email,
-      role: "user",
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
     };
-    setCurrentUser(newUser);
+  }, []);
+
+  const logout = async () => {
+    try {
+      await authSignOut();
+      setProfile(null);
+      setAuthStatus("anonymous");
+      setLastAuthError(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setLastAuthError(error instanceof Error ? error.message : "Failed to sign out");
+    }
   };
 
-  const logout = () => {
-    setCurrentUser(null);
+  const refreshProfile = async () => {
+    const { data: { session } } = await import("@/services/authService").then(m => m.getSession());
+    await loadProfile(session);
   };
 
   return (
-    <SessionContext.Provider value={{ currentUser, loginAs, loginMock, registerMock, logout }}>
+    <SessionContext.Provider 
+      value={{ 
+        authStatus, 
+        profile, 
+        lastAuthError, 
+        logout,
+        refreshProfile
+      }}
+    >
       {children}
     </SessionContext.Provider>
   );
@@ -62,4 +105,10 @@ export function useSession() {
     throw new Error("useSession must be used within a SessionProvider");
   }
   return context;
+}
+
+// Backward compatibility helpers
+export function useCurrentUser() {
+  const { profile } = useSession();
+  return profile;
 }
