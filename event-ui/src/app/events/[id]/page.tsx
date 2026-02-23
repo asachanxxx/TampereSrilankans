@@ -7,28 +7,46 @@ import { EventDetailHeader } from "@/components/events/EventDetailHeader";
 import { EventMetaRow } from "@/components/events/EventMetaRow";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockEvents } from "@/mock/events";
 import { useSession } from "@/state/session";
-import { AlertCircle, CheckCircle } from "lucide-react";
-import { EventRegistrationDialog } from "@/components/events/EventRegistrationDialog";
-import { useState } from "react";
-import { userEventsMap } from "@/mock/userEvents";
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import type { Event } from "@/models/event";
 
 export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = mockEvents.find((e) => e.id === params.id);
-  const { currentUser } = useSession();
-  const [registrationOpen, setRegistrationOpen] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(
-    currentUser ? userEventsMap[currentUser.id]?.includes(params.id) : false
-  );
+  const { currentUser, authStatus } = useSession();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/events/${params.id}`)
+      .then((r) => r.json())
+      .then(({ event: fetchedEvent }) => setEvent(fetchedEvent ?? null))
+      .catch(() => setEvent(null))
+      .finally(() => setLoading(false));
+  }, [params.id]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+    fetch(`/api/registrations?eventId=${params.id}`)
+      .then((r) => r.json())
+      .then(({ isRegistered }) => setIsRegistered(!!isRegistered))
+      .catch(() => {});
+  }, [authStatus, params.id]);
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="container mx-auto max-w-6xl px-4 py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PublicLayout>
+    );
+  }
 
   if (!event) {
     notFound();
   }
-
-  const handleRegistrationSuccess = () => {
-    setIsRegistered(true);
-  };
 
   // Registration button configuration
   const getRegistrationButtonConfig = () => {
@@ -63,7 +81,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           text: "Register Here",
           variant: "default" as const,
           disabled: false,
-          action: () => setRegistrationOpen(true),
+          href: `/events/${params.id}/register`,
         };
       case "soon":
         return {
@@ -142,14 +160,19 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               ? "Registration will open soon. Check back later!"
                               : "Registration for this event has closed."}
                           </p>
-                          <Button
-                            className="w-full"
-                            variant={buttonConfig.variant}
-                            disabled={buttonConfig.disabled}
-                            onClick={buttonConfig.action}
-                          >
-                            {buttonConfig.text}
-                          </Button>
+                          {buttonConfig.href ? (
+                            <Button className="w-full" variant={buttonConfig.variant} asChild>
+                              <Link href={buttonConfig.href}>{buttonConfig.text}</Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              className="w-full"
+                              variant={buttonConfig.variant}
+                              disabled={buttonConfig.disabled}
+                            >
+                              {buttonConfig.text}
+                            </Button>
+                          )}
                         </>
                       )}
                     </>
@@ -214,14 +237,19 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             ? "Registration will open soon. Check back later!"
                             : "Registration for this event has closed."}
                         </p>
-                        <Button
-                          className="w-full"
-                          variant={buttonConfig.variant}
-                          disabled={buttonConfig.disabled}
-                          onClick={buttonConfig.action}
-                        >
-                          {buttonConfig.text}
-                        </Button>
+                        {buttonConfig.href ? (
+                          <Button className="w-full" variant={buttonConfig.variant} asChild>
+                            <Link href={buttonConfig.href}>{buttonConfig.text}</Link>
+                          </Button>
+                        ) : (
+                          <Button
+                            className="w-full"
+                            variant={buttonConfig.variant}
+                            disabled={buttonConfig.disabled}
+                          >
+                            {buttonConfig.text}
+                          </Button>
+                        )}
                       </>
                     )}
                   </>
@@ -244,12 +272,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      <EventRegistrationDialog
-        open={registrationOpen}
-        onOpenChange={setRegistrationOpen}
-        event={event}
-        onSuccess={handleRegistrationSuccess}
-      />
     </PublicLayout>
   );
 }

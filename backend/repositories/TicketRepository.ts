@@ -34,6 +34,8 @@ export class TicketRepository {
         user_id: userId,
         event_id: eventId,
         ticket_number: ticketNumber,
+        issued_to_name: issuedToName,
+        issued_to_email: issuedToEmail,
         issued_at: new Date().toISOString(),
       }])
       .select()
@@ -41,7 +43,7 @@ export class TicketRepository {
 
     if (error) throw error;
 
-    return this.mapToTicket(data, issuedToName, issuedToEmail);
+    return this.mapToTicket(data);
   }
 
   /**
@@ -50,10 +52,7 @@ export class TicketRepository {
   async getTicketByNumber(ticketNumber: string): Promise<Ticket | null> {
     const { data, error } = await this.supabase
       .from('tickets')
-      .select(`
-        *,
-        profiles:user_id (display_name, email)
-      `)
+      .select('*')
       .eq('ticket_number', ticketNumber)
       .single();
 
@@ -62,12 +61,7 @@ export class TicketRepository {
       throw error;
     }
 
-    const profile = data.profiles as any;
-    return this.mapToTicket(
-      data,
-      profile?.display_name || 'Unknown',
-      profile?.email || 'unknown@example.com'
-    );
+    return data ? this.mapToTicket(data) : null;
   }
 
   /**
@@ -76,10 +70,7 @@ export class TicketRepository {
   async getUserTicketForEvent(userId: string, eventId: string): Promise<Ticket | null> {
     const { data, error } = await this.supabase
       .from('tickets')
-      .select(`
-        *,
-        profiles:user_id (display_name, email)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .eq('event_id', eventId)
       .single();
@@ -89,12 +80,7 @@ export class TicketRepository {
       throw error;
     }
 
-    const profile = data.profiles as any;
-    return this.mapToTicket(
-      data,
-      profile?.display_name || 'Unknown',
-      profile?.email || 'unknown@example.com'
-    );
+    return data ? this.mapToTicket(data) : null;
   }
 
   /**
@@ -103,23 +89,13 @@ export class TicketRepository {
   async getUserTickets(userId: string): Promise<Ticket[]> {
     const { data, error } = await this.supabase
       .from('tickets')
-      .select(`
-        *,
-        profiles:user_id (display_name, email)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .order('issued_at', { ascending: false });
 
     if (error) throw error;
 
-    return (data || []).map((row) => {
-      const profile = row.profiles as any;
-      return this.mapToTicket(
-        row,
-        profile?.display_name || 'Unknown',
-        profile?.email || 'unknown@example.com'
-      );
-    });
+    return (data || []).map((row) => this.mapToTicket(row));
   }
 
   /**
@@ -128,23 +104,13 @@ export class TicketRepository {
   async getEventTickets(eventId: string): Promise<Ticket[]> {
     const { data, error } = await this.supabase
       .from('tickets')
-      .select(`
-        *,
-        profiles:user_id (display_name, email)
-      `)
+      .select('*')
       .eq('event_id', eventId)
       .order('issued_at', { ascending: false });
 
     if (error) throw error;
 
-    return (data || []).map((row) => {
-      const profile = row.profiles as any;
-      return this.mapToTicket(
-        row,
-        profile?.display_name || 'Unknown',
-        profile?.email || 'unknown@example.com'
-      );
-    });
+    return (data || []).map((row) => this.mapToTicket(row));
   }
 
   /**
@@ -162,15 +128,15 @@ export class TicketRepository {
   /**
    * Map database row to Ticket model
    */
-  private mapToTicket(row: any, issuedToName: string, issuedToEmail: string): Ticket {
+  private mapToTicket(row: any): Ticket {
     return {
       id: row.id,
       eventId: row.event_id,
       userId: row.user_id,
       ticketNumber: row.ticket_number,
       issuedAt: row.issued_at,
-      issuedToName,
-      issuedToEmail,
+      issuedToName: row.issued_to_name || '',
+      issuedToEmail: row.issued_to_email || '',
     };
   }
 }

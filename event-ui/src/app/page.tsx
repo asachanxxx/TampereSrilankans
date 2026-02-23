@@ -1,22 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { EventListGrid } from "@/components/events/EventListGrid";
 import { CategoryFilterPills } from "@/components/events/CategoryFilterPills";
 import { RatingSortDropdown, SortOption } from "@/components/events/RatingSortDropdown";
 import { EmptyState } from "@/components/events/EmptyState";
-import { mockEvents } from "@/mock/events";
 import { Event } from "@/models/event";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("upcoming");
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/events")
+      .then((r) => r.json())
+      .then(({ events }) => setAllEvents(events || []))
+      .catch(() => setAllEvents([]))
+      .finally(() => setEventsLoading(false));
+  }, []);
 
   // Filter events
-  let filteredEvents = mockEvents.filter((event) =>
+  let filteredEvents = allEvents.filter((event) =>
     selectedCategory === "all" ? true : event.categoryId === selectedCategory
   );
 
@@ -132,7 +141,11 @@ export default function HomePage() {
             />
           </div>
 
-          {filteredEvents.length > 0 ? (
+          {eventsLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <EventListGrid events={filteredEvents} />
           ) : (
             <EmptyState

@@ -3,9 +3,9 @@
  * Handles user profile creation and management
  */
 
-import { createClient as createBrowserClient } from '@/../../backend/lib/supabase/client';
+import { createClient as createBrowserClient } from '@backend/lib/supabase/client';
 import { createClient } from '@supabase/supabase-js';
-import { ProfileRepository } from '@/../../backend/repositories/ProfileRepository';
+import { ProfileRepository } from '@backend/repositories/ProfileRepository';
 import { deriveDisplayName, determineRole } from '@/lib/auth-utils';
 import type { User } from '@supabase/supabase-js';
 import type { AppUser } from '@/models/user';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../../../../../backend/lib/supabase/server';
-import { AdminService } from '../../../../../../../../backend/services/AdminService';
+import { createClient } from '@backend/lib/supabase/server';
+import { AdminService } from '@backend/services/AdminService';
 import { requireAdmin } from '../../../../lib/auth';
 
 /**

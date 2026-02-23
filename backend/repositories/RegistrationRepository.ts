@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Registration } from '../../event-ui/src/models/registration';
+import { Registration, RegistrationFormData } from '../../event-ui/src/models/registration';
 
 /**
  * RegistrationRepository - Data access layer for event_registrations table
@@ -11,13 +11,24 @@ export class RegistrationRepository {
    * Register a user for an event
    * Returns null if already registered (duplicate constraint)
    */
-  async registerUser(userId: string, eventId: string): Promise<Registration | null> {
-    const { data, error } = await this.supabase
+  async registerUser(userId: string, eventId: string, data: RegistrationFormData): Promise<Registration | null> {
+    const { data: row, error } = await this.supabase
       .from('event_registrations')
       .insert([{
         user_id: userId,
         event_id: eventId,
         registered_at: new Date().toISOString(),
+        full_name: data.fullName,
+        whatsapp_number: data.whatsappNumber ?? null,
+        email: data.email,
+        spouse_name: data.spouseName ?? null,
+        children_under_7_count: data.childrenUnder7Count ?? 0,
+        children_over_7_count: data.childrenOver7Count ?? 0,
+        children_names_and_ages: data.childrenNamesAndAges ?? null,
+        vegetarian_meal_count: data.vegetarianMealCount ?? 0,
+        non_vegetarian_meal_count: data.nonVegetarianMealCount ?? 0,
+        other_preferences: data.otherPreferences ?? null,
+        consent_to_store_personal_data: data.consentToStorePersonalData,
       }])
       .select()
       .single();
@@ -30,7 +41,7 @@ export class RegistrationRepository {
       throw error;
     }
 
-    return this.mapToRegistration(data);
+    return this.mapToRegistration(row);
   }
 
   /**
@@ -133,6 +144,17 @@ export class RegistrationRepository {
       eventId: row.event_id,
       userId: row.user_id,
       registeredAt: row.registered_at,
+      fullName: row.full_name,
+      whatsappNumber: row.whatsapp_number ?? undefined,
+      email: row.email,
+      spouseName: row.spouse_name ?? undefined,
+      childrenUnder7Count: row.children_under_7_count ?? 0,
+      childrenOver7Count: row.children_over_7_count ?? 0,
+      childrenNamesAndAges: row.children_names_and_ages ?? undefined,
+      vegetarianMealCount: row.vegetarian_meal_count ?? 0,
+      nonVegetarianMealCount: row.non_vegetarian_meal_count ?? 0,
+      otherPreferences: row.other_preferences ?? undefined,
+      consentToStorePersonalData: row.consent_to_store_personal_data,
     };
   }
 }

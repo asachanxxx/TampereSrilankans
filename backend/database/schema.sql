@@ -112,6 +112,17 @@ CREATE TABLE IF NOT EXISTS event_registrations (
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   registered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  full_name TEXT NOT NULL,
+  whatsapp_number TEXT,
+  email TEXT NOT NULL,
+  spouse_name TEXT,
+  children_under_7_count INT NOT NULL DEFAULT 0,
+  children_over_7_count INT NOT NULL DEFAULT 0,
+  children_names_and_ages TEXT,
+  vegetarian_meal_count INT NOT NULL DEFAULT 0,
+  non_vegetarian_meal_count INT NOT NULL DEFAULT 0,
+  other_preferences TEXT,
+  consent_to_store_personal_data BOOLEAN NOT NULL DEFAULT false,
   UNIQUE(event_id, user_id)
 );
 
@@ -148,6 +159,8 @@ CREATE TABLE IF NOT EXISTS tickets (
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   ticket_number TEXT NOT NULL UNIQUE,
+  issued_to_name TEXT NOT NULL DEFAULT '',
+  issued_to_email TEXT NOT NULL DEFAULT '',
   issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

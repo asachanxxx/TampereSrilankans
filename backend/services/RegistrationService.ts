@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Registration } from '../../event-ui/src/models/registration';
+import { Registration, RegistrationFormData } from '../../event-ui/src/models/registration';
 import { AppUser } from '../../event-ui/src/models/user';
 import { RegistrationRepository } from '../repositories/RegistrationRepository';
 import { EventRepository } from '../repositories/EventRepository';
@@ -25,12 +25,13 @@ export class RegistrationService {
    * Register user for an event
    * Automatically generates a ticket upon successful registration
    */
-  async registerForEvent(userId: string, eventId: string, user: AppUser | null): Promise<Registration> {
+  async registerForEvent(userId: string, eventId: string, user: AppUser | null, formData: RegistrationFormData): Promise<Registration> {
     // Must be authenticated
     requireAuth(user);
 
     // Validate inputs
     RegistrationValidator.validateRegistration(userId, eventId);
+    RegistrationValidator.validateRegistrationData(formData);
 
     // User can only register themselves (unless admin)
     if (user!.id !== userId && !isAdmin(user)) {
@@ -60,7 +61,7 @@ export class RegistrationService {
     }
 
     // Register user
-    const registration = await this.registrationRepo.registerUser(userId, eventId);
+    const registration = await this.registrationRepo.registerUser(userId, eventId, formData);
     if (!registration) {
       throw new Error('Registration failed - you may already be registered');
     }

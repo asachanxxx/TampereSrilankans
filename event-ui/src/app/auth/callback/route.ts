@@ -3,7 +3,7 @@
  * Handles the OAuth redirect after Google/Facebook authentication
  */
 
-import { createClient } from '@/../../backend/lib/supabase/server';
+import { createClient } from '@backend/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { handlePostAuth } from '@/services/profileService';
 

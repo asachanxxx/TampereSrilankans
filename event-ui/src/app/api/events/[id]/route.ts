@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../../../../../backend/lib/supabase/server';
-import { EventService } from '../../../../../../../../backend/services/EventService';
-import { RegistrationRepository } from '../../../../../../../../backend/repositories/RegistrationRepository';
+import { createClient } from '@backend/lib/supabase/server';
+import { EventService } from '@backend/services/EventService';
+import { RegistrationRepository } from '@backend/repositories/RegistrationRepository';
 import { getCurrentUser } from '../../../../lib/auth';
 
 /**

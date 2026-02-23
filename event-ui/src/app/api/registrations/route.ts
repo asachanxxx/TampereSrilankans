@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../../../../backend/lib/supabase/server';
-import { RegistrationService } from '../../../../../../../backend/services/RegistrationService';
+import { createClient } from '@backend/lib/supabase/server';
+import { RegistrationService } from '@backend/services/RegistrationService';
 import { getCurrentUser, requireAuth } from '../../../lib/auth';
 
 /**
@@ -14,7 +14,20 @@ export async function POST(request: NextRequest) {
     const registrationService = new RegistrationService(supabase);
 
     const body = await request.json();
-    const { eventId } = body;
+    const {
+      eventId,
+      fullName,
+      whatsappNumber,
+      email,
+      spouseName,
+      childrenUnder7Count,
+      childrenOver7Count,
+      childrenNamesAndAges,
+      vegetarianMealCount,
+      nonVegetarianMealCount,
+      otherPreferences,
+      consentToStorePersonalData,
+    } = body;
 
     if (!eventId) {
       return NextResponse.json(
@@ -27,7 +40,20 @@ export async function POST(request: NextRequest) {
     const registration = await registrationService.registerForEvent(
       user.id,
       eventId,
-      user
+      user,
+      {
+        fullName,
+        whatsappNumber,
+        email,
+        spouseName,
+        childrenUnder7Count,
+        childrenOver7Count,
+        childrenNamesAndAges,
+        vegetarianMealCount,
+        nonVegetarianMealCount,
+        otherPreferences,
+        consentToStorePersonalData,
+      }
     );
 
     return NextResponse.json(

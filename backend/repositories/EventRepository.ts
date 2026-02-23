@@ -156,6 +156,8 @@ export class EventRepository {
       aboutSectionTitle: row.about_section_title,
       organizerName: row.organizer_name,
       createdAt: row.created_at,
+      registrationEnabled: row.registration_enabled,
+      registrationStatus: row.registration_status,
     };
   }
 
@@ -182,6 +184,8 @@ export class EventRepository {
     if (event.description !== undefined) row.description = event.description;
     if (event.aboutSectionTitle !== undefined) row.about_section_title = event.aboutSectionTitle;
     if (event.organizerName !== undefined) row.organizer_name = event.organizerName;
+    if (event.registrationEnabled !== undefined) row.registration_enabled = event.registrationEnabled;
+    if (event.registrationStatus !== undefined) row.registration_status = event.registrationStatus;
     
     return row;
   }

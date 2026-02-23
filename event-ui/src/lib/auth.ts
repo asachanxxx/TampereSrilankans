@@ -1,6 +1,6 @@
-import { createClient } from '../../../../../../backend/lib/supabase/server';
+import { createClient } from '@backend/lib/supabase/server';
 import { AppUser } from '../models/user';
-import { ProfileRepository } from '../../../../../../backend/repositories/ProfileRepository';
+import { ProfileRepository } from '@backend/repositories/ProfileRepository';
 
 /**
  * Get the current authenticated user from the session

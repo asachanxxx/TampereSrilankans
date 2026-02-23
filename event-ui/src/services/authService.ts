@@ -3,7 +3,7 @@
  * Handles OAuth authentication with Google and Facebook
  */
 
-import { createClient } from '@/../../backend/lib/supabase/client';
+import { createClient } from '@backend/lib/supabase/client';
 import type { Provider } from '@supabase/supabase-js';
 
 const supabase = createClient();
