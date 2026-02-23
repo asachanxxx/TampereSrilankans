@@ -98,9 +98,14 @@ export class ProfileRepository {
 
     if (error) throw error;
 
-    // For batch operations, we'll need to get emails separately
-    // This is not optimal but necessary due to Supabase structure
-    return (data || []).map((row) => this.mapToAppUser(row, 'email@example.com'));
+    // Fetch all auth users to resolve emails
+    const { data: authData } = await this.supabase.auth.admin.listUsers({ perPage: 1000 });
+    const emailMap: Record<string, string> = {};
+    for (const u of authData?.users ?? []) {
+      if (u.email) emailMap[u.id] = u.email;
+    }
+
+    return (data || []).map((row) => this.mapToAppUser(row, emailMap[row.id] || 'unknown@example.com'));
   }
 
   /**
