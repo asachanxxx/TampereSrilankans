@@ -58,6 +58,23 @@ export class AdminService {
   }
 
   /**
+   * Update user profile (name and/or role) - admin only
+   */
+  async updateUserProfile(
+    userId: string,
+    updates: { displayName?: string; role?: 'user' | 'member' | 'moderator' | 'organizer' | 'admin' },
+    requestingUser: AppUser | null
+  ): Promise<AppUser> {
+    requireAdmin(requestingUser);
+
+    if (updates.role && userId === requestingUser!.id && updates.role !== 'admin') {
+      throw new Error('You cannot change your own role');
+    }
+
+    return this.profileRepo.updateProfile(userId, updates);
+  }
+
+  /**
    * Get all events with statistics (admin only)
    */
   async getAllEventsWithStats(user: AppUser | null): Promise<Array<Event & { registrationCount: number; ticketCount: number }>> {
