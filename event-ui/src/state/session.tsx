@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { AppUser } from "@/models/user";
 import { onAuthStateChange, signOut as authSignOut } from "@/services/authService";
-import { handlePostAuth } from "@/services/profileService";
 import type { Session } from "@supabase/supabase-js";
 
 type AuthStatus = "loading" | "authenticated" | "anonymous";
@@ -32,11 +31,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Get or create profile
-      const userProfile = await handlePostAuth(session.user);
-      setProfile(userProfile);
-      setAuthStatus("authenticated");
-      setLastAuthError(null);
+      // Fetch existing profile (created by OAuth callback handler on server)
+      const { getProfileById } = await import("@/services/profileService");
+      const userProfile = await getProfileById(session.user.id);
+      
+      if (userProfile) {
+        setProfile(userProfile);
+        setAuthStatus("authenticated");
+        setLastAuthError(null);
+      } else {
+        console.error("Profile not found for user:", session.user.id);
+        setLastAuthError("Profile not found. Please contact support.");
+        setProfile(null);
+        setAuthStatus("anonymous");
+      }
     } catch (error) {
       console.error("Error loading profile:", error);
       setLastAuthError(error instanceof Error ? error.message : "Failed to load profile");
@@ -47,7 +55,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state listener
   useEffect(() => {
-    // Subscribe to auth changes
+    // Explicitly fetch initial session from cookies on mount
+    const initializeSession = async () => {
+      console.log('🔍 SessionProvider: Fetching initial session from cookies...');
+      const { data: { session } } = await import("@/services/authService").then(m => m.getSession());
+      console.log('🔍 Initial session check:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        userEmail: session?.user?.email 
+      });
+      await loadProfile(session);
+    };
+
+    // Initialize session first
+    initializeSession();
+
+    // Then subscribe to auth changes
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event);
       
