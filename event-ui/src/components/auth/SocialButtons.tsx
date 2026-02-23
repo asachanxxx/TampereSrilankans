@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { signInWithGoogle, signInWithFacebook } from "@/services/authService";
+import { signInWithFacebook } from "@/services/authService";
 import { Loader2 } from "lucide-react";
 
 export function SocialButtons() {
@@ -16,12 +16,8 @@ export function SocialButtons() {
     setError(null);
     
     try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        setError(error.message);
-        toast.error("Failed to sign in with Google");
-      }
-      // OAuth redirect happens automatically
+      // Redirect to server-side OAuth endpoint
+      window.location.href = '/api/auth/google';
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);

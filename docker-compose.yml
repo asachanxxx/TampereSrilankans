@@ -21,3 +21,4 @@ services:
 networks:
   event-network:
     driver: bridge
+

@@ -12,10 +12,19 @@ const supabase = createClient();
  * Sign in with Google OAuth
  */
 export async function signInWithGoogle() {
+  const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+  
+  console.log('🔵 GOOGLE OAUTH CONFIG:', {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    redirectTo,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    expectedCallbackFormat: 'http://localhost:3000/auth/callback'
+  });
+  
   return await supabase.auth.signInWithOAuth({
     provider: 'google' as Provider,
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo,
     },
   });
 }

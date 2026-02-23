@@ -57,28 +57,69 @@ export async function createProfile(authUser: User): Promise<AppUser> {
 /**
  * Get or create profile (idempotent)
  * This is the core function called after OAuth authentication
+ * Uses admin client to bypass RLS policies
  * 
  * Flow:
- * 1. Try to fetch existing profile
+ * 1. Try to fetch existing profile with admin client
  * 2. If not found, create new profile with derived display name and role
- * 3. Return profile
+ * 3. Handle duplicate key errors gracefully
+ * 4. Return profile
  */
 export async function handlePostAuth(authUser: User): Promise<AppUser> {
   if (!authUser.id || !authUser.email) {
     throw new Error('Invalid auth user: missing id or email');
   }
 
-  // Try to get existing profile
-  let profile = await getProfileById(authUser.id);
+  // Create admin client with service role key to bypass RLS
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
+  
+  const profileRepo = new ProfileRepository(supabase);
 
-  // If profile exists, return it
-  if (profile) {
-    return profile;
+  // Try to get existing profile using admin client
+  try {
+    const profile = await profileRepo.getProfileById(authUser.id);
+    if (profile) {
+      console.log('✅ Profile found for user:', authUser.email);
+      return profile;
+    }
+  } catch (error) {
+    console.log('⚠️  Error fetching profile, will try to create:', error);
   }
 
   // Profile doesn't exist, create it
   console.log('Creating new profile for user:', authUser.email);
-  profile = await createProfile(authUser);
-
-  return profile;
+  
+  try {
+    const displayName = deriveDisplayName(authUser);
+    const role = determineRole(authUser.email || '');
+    
+    const profile = await profileRepo.createProfile(
+      authUser.id,
+      displayName,
+      authUser.email || '',
+      role
+    );
+    
+    console.log('✅ Profile created successfully');
+    return profile;
+  } catch (error: any) {
+    // Handle duplicate key error - profile already exists
+    if (error?.code === '23505') {
+      console.log('Profile already exists (duplicate key), fetching it...');
+      const profile = await profileRepo.getProfileById(authUser.id);
+      if (profile) {
+        return profile;
+      }
+    }
+    throw error;
+  }
 }
