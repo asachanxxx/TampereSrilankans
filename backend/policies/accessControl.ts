@@ -1,5 +1,51 @@
-import { AppUser } from '../../event-ui/src/models/user';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { AppUser, UserRole } from '../../event-ui/src/models/user';
 import { Event } from '../../event-ui/src/models/event';
+import { PermissionsRepository } from '../repositories/PermissionsRepository';
+
+// =====================================================
+// DB-driven permission cache (5 min TTL)
+// =====================================================
+
+/** role → Set<permissionId> */
+let _permCache: Map<string, Set<string>> | null = null;
+let _cacheLoadedAt = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Load permissions from DB into the module-level cache.
+ * Automatically called by hasPermission() when the cache is stale.
+ */
+async function loadPermissionCache(supabase: SupabaseClient): Promise<void> {
+  const repo = new PermissionsRepository(supabase);
+  const map = await repo.getAllRolePermissions();
+  _permCache = new Map(Object.entries(map).map(([role, perms]) => [role, new Set(perms)]));
+  _cacheLoadedAt = Date.now();
+}
+
+/**
+ * Check whether a role holds a specific permission.
+ * Uses an in-memory cache (5-min TTL) so DB calls are infrequent.
+ */
+export async function hasPermission(
+  supabase: SupabaseClient,
+  role: UserRole | null | undefined,
+  permission: string
+): Promise<boolean> {
+  if (!role) return false;
+  if (!_permCache || Date.now() - _cacheLoadedAt > CACHE_TTL_MS) {
+    await loadPermissionCache(supabase);
+  }
+  return _permCache?.get(role)?.has(permission) ?? false;
+}
+
+/**
+ * Invalidate the permission cache – call this after any grant/revoke operation.
+ */
+export function invalidatePermissionCache(): void {
+  _permCache = null;
+  _cacheLoadedAt = 0;
+}
 
 /**
  * Access control policies - Business logic for authorization
@@ -14,34 +60,55 @@ export function isAdmin(user: AppUser | null): boolean {
 }
 
 /**
- * Check if user is authenticated (not guest)
+ * Check if user is a moderator (or higher)
+ */
+export function isModerator(user: AppUser | null): boolean {
+  return user?.role === 'moderator' || user?.role === 'admin';
+}
+
+/**
+ * Check if user is an organizer (or higher)
+ */
+export function isOrganizer(user: AppUser | null): boolean {
+  return user?.role === 'organizer' || user?.role === 'moderator' || user?.role === 'admin';
+}
+
+/**
+ * Check if user is a verified member (or higher)
+ */
+export function isMember(user: AppUser | null): boolean {
+  return user?.role === 'member' || user?.role === 'organizer' || user?.role === 'moderator' || user?.role === 'admin';
+}
+
+/**
+ * Check if user is authenticated
  */
 export function isAuthenticated(user: AppUser | null): boolean {
-  return user !== null && user.role !== 'guest';
+  return user !== null;
 }
 
 /**
  * Check if user can edit an event
- * Only admins can edit events
+ * Admins, moderators, and organizers can edit events
  */
 export function canEditEvent(user: AppUser | null, event?: Event): boolean {
-  return isAdmin(user);
+  return isOrganizer(user);
 }
 
 /**
  * Check if user can delete an event
- * Only admins can delete events
+ * Only admins and moderators can delete events
  */
 export function canDeleteEvent(user: AppUser | null, event?: Event): boolean {
-  return isAdmin(user);
+  return isModerator(user);
 }
 
 /**
  * Check if user can create an event
- * Only admins can create events
+ * Admins, moderators, and organizers can create events
  */
 export function canCreateEvent(user: AppUser | null): boolean {
-  return isAdmin(user);
+  return isOrganizer(user);
 }
 
 /**

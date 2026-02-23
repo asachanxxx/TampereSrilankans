@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -42,7 +43,22 @@ export function UserMenuDropdown() {
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          <div>{profile.displayName}</div>
+          <div className="text-xs font-normal text-muted-foreground">{profile.email}</div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href="/me">My Events</Link>
+        </DropdownMenuItem>
+        {profile.role === "admin" && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/admin">
+              <Settings className="mr-2 h-4 w-4" />
+              Admin Dashboard
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />

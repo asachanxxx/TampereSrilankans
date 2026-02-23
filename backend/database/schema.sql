@@ -10,7 +10,7 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('user', 'admin')) DEFAULT 'user',
+  role TEXT NOT NULL CHECK (role IN ('user', 'member', 'moderator', 'organizer', 'admin')) DEFAULT 'user',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -36,7 +36,80 @@ CREATE POLICY "Admins can read all profiles"
   );
 
 -- =====================================================
--- 2. Create events table
+-- 2. Create permissions tables
+-- =====================================================
+
+-- All available permissions in the system
+CREATE TABLE IF NOT EXISTS permissions (
+  id TEXT PRIMARY KEY,               -- e.g. 'events:create'
+  category TEXT NOT NULL,            -- e.g. 'events', 'users'
+  description TEXT NOT NULL
+);
+
+-- Role → permission mapping (source of truth for access control)
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role TEXT NOT NULL CHECK (role IN ('user', 'member', 'organizer', 'moderator', 'admin')),
+  permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  PRIMARY KEY (role, permission_id)
+);
+
+-- Enable RLS
+ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can read permissions (needed for frontend checks)
+CREATE POLICY "Anyone can read permissions"
+  ON permissions FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can read role_permissions"
+  ON role_permissions FOR SELECT USING (true);
+
+-- Only admins can modify
+CREATE POLICY "Admins can manage permissions"
+  ON permissions FOR ALL
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+CREATE POLICY "Admins can manage role_permissions"
+  ON role_permissions FOR ALL
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- Seed: all available permissions
+INSERT INTO permissions (id, category, description) VALUES
+  ('events:view_private',      'events',        'View private/hidden events'),
+  ('events:create',            'events',        'Create new events'),
+  ('events:edit',              'events',        'Edit any event'),
+  ('events:delete',            'events',        'Delete any event'),
+  ('registrations:view_all',   'registrations', 'View all users'' registrations'),
+  ('tickets:view_all',         'tickets',       'View all tickets'),
+  ('users:manage',             'users',         'Manage user roles'),
+  ('permissions:manage',       'permissions',   'Manage role permissions')
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed: default role → permission assignments
+INSERT INTO role_permissions (role, permission_id) VALUES
+  -- organizer
+  ('organizer', 'events:create'),
+  ('organizer', 'events:edit'),
+  -- moderator
+  ('moderator', 'events:view_private'),
+  ('moderator', 'events:create'),
+  ('moderator', 'events:edit'),
+  ('moderator', 'events:delete'),
+  ('moderator', 'registrations:view_all'),
+  ('moderator', 'tickets:view_all'),
+  -- admin (all)
+  ('admin', 'events:view_private'),
+  ('admin', 'events:create'),
+  ('admin', 'events:edit'),
+  ('admin', 'events:delete'),
+  ('admin', 'registrations:view_all'),
+  ('admin', 'tickets:view_all'),
+  ('admin', 'users:manage'),
+  ('admin', 'permissions:manage')
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- 3. Create events table
 -- =====================================================
 CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -105,7 +178,7 @@ CREATE POLICY "Only admins can delete events"
   );
 
 -- =====================================================
--- 3. Create event_registrations table
+-- 4. Create event_registrations table
 -- =====================================================
 CREATE TABLE IF NOT EXISTS event_registrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -152,7 +225,7 @@ CREATE POLICY "Users can delete own registrations"
   USING (auth.uid() = user_id);
 
 -- =====================================================
--- 4. Create tickets table
+-- 5. Create tickets table
 -- =====================================================
 CREATE TABLE IF NOT EXISTS tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -186,7 +259,7 @@ CREATE POLICY "System can insert tickets"
   WITH CHECK (true);
 
 -- =====================================================
--- 5. Create indexes for performance
+-- 6. Create indexes for performance
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility_id);
 CREATE INDEX IF NOT EXISTS idx_events_status ON events(status_id);
@@ -199,7 +272,7 @@ CREATE INDEX IF NOT EXISTS idx_tickets_event ON tickets(event_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_number ON tickets(ticket_number);
 
 -- =====================================================
--- 6. Create trigger to auto-create profile
+-- 7. Create trigger to auto-create profile
 -- =====================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -221,13 +294,13 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =====================================================
--- 7. Create your first admin user (OPTIONAL)
+-- 8. Create your first admin user (OPTIONAL)
 -- =====================================================
 -- After signing up via the app, run this to make yourself admin:
 -- UPDATE profiles SET role = 'admin' WHERE id = 'your-user-id-here';
 
 -- =====================================================
--- Setup Complete!
+-- 9. Setup Complete!
 -- =====================================================
 -- Next steps:
 -- 1. Enable Email auth in Supabase Dashboard > Authentication > Providers

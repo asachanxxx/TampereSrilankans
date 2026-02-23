@@ -44,14 +44,14 @@ export class AdminService {
    */
   async updateUserRole(
     userId: string,
-    newRole: 'user' | 'admin',
+    newRole: 'user' | 'member' | 'moderator' | 'organizer' | 'admin',
     requestingUser: AppUser | null
   ): Promise<AppUser> {
     requireAdmin(requestingUser);
 
     // Prevent admin from demoting themselves
-    if (userId === requestingUser!.id && newRole === 'user') {
-      throw new Error('You cannot demote yourself');
+    if (userId === requestingUser!.id && newRole !== 'admin') {
+      throw new Error('You cannot change your own role');
     }
 
     return this.profileRepo.updateProfile(userId, { role: newRole });

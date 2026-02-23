@@ -66,7 +66,7 @@ export class ProfileRepository {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: { displayName?: string; role?: 'user' | 'admin' }): Promise<AppUser> {
+  async updateProfile(userId: string, updates: { displayName?: string; role?: 'user' | 'member' | 'moderator' | 'organizer' | 'admin' }): Promise<AppUser> {
     const dbUpdates: any = {};
     if (updates.displayName !== undefined) dbUpdates.display_name = updates.displayName;
     if (updates.role !== undefined) dbUpdates.role = updates.role;

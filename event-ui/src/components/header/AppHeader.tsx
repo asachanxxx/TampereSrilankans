@@ -20,8 +20,8 @@ export function AppHeader() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/#events", label: "Events" },
-    { href: "/#about", label: "About" },
+    { href: "/events", label: "Events" },
+    { href: "/about", label: "About" },
   ];
 
   return (
@@ -48,7 +48,7 @@ export function AppHeader() {
                 {link.label}
               </Link>
             ))}
-            {profile && profile.role === "user" && (
+            {profile && (
               <Link
                 href="/me"
                 className="text-sm font-medium transition-colors hover:text-primary"
@@ -96,7 +96,7 @@ export function AppHeader() {
                       {link.label}
                     </Link>
                   ))}
-                  {profile && profile.role === "user" && (
+                  {profile && (
                     <Link
                       href="/me"
                       onClick={() => setMobileMenuOpen(false)}

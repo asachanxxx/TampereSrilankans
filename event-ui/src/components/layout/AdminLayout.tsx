@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, Settings, Menu, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Calendar, Settings, Menu, ShieldCheck, Users, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +29,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/events", icon: Calendar, label: "Events" },
+    { href: "/admin/users", icon: Users, label: "Users" },
+    { href: "/admin/permissions", icon: Lock, label: "Permissions" },
     { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },
   ];
 

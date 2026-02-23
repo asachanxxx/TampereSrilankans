@@ -60,9 +60,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (!role || !['user', 'admin'].includes(role)) {
+    const validRoles = ['user', 'member', 'moderator', 'organizer', 'admin'];
+    if (!role || !validRoles.includes(role)) {
       return NextResponse.json(
-        { error: 'Valid role (user or admin) is required' },
+        { error: `Valid role required: ${validRoles.join(', ')}` },
         { status: 400 }
       );
     }
