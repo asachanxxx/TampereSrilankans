@@ -117,7 +117,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild>
-              <Link href={`/me/events/${params.id}`}>View My Ticket</Link>
+              <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href={`/events/${params.id}`}>Back to Event</Link>
