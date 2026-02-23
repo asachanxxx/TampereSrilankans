@@ -10,6 +10,7 @@ type AuthStatus = "loading" | "authenticated" | "anonymous";
 type SessionContextType = {
   authStatus: AuthStatus;
   profile: AppUser | null;
+  currentUser: AppUser | null;
   lastAuthError: string | null;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -112,6 +113,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       value={{ 
         authStatus, 
         profile, 
+        currentUser: profile,
         lastAuthError, 
         logout,
         refreshProfile
