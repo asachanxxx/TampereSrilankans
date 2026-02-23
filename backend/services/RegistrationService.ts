@@ -71,8 +71,8 @@ export class RegistrationService {
       await this.ticketService.generateTicket(
         userId,
         eventId,
-        user!.displayName,
-        user!.email
+        formData.fullName,
+        formData.email
       );
     } catch (error) {
       // If ticket generation fails, we might want to rollback the registration

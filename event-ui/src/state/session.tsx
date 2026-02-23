@@ -25,29 +25,47 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Load profile from auth session
   const loadProfile = async (session: Session | null) => {
+    console.log('📋 loadProfile called:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+    });
+
     if (!session?.user) {
+      console.log('📋 No session/user → setting anonymous');
       setProfile(null);
       setAuthStatus("anonymous");
       return;
     }
 
     try {
-      // Fetch existing profile (created by OAuth callback handler on server)
-      const { getProfileById } = await import("@/services/profileService");
-      const userProfile = await getProfileById(session.user.id);
-      
-      if (userProfile) {
-        setProfile(userProfile);
+      // Use the server-side /api/me endpoint instead of querying the DB directly
+      // from the browser — the server client reliably reads the session cookie,
+      // whereas the browser Supabase client may not have synced it yet right after OAuth.
+      const res = await fetch('/api/me');
+      const { user: enriched } = await res.json();
+
+      console.log('📋 /api/me response:', {
+        found: !!enriched,
+        id: enriched?.id,
+        displayName: enriched?.displayName,
+        email: enriched?.email,
+        role: enriched?.role,
+      });
+
+      if (enriched) {
+        console.log('✅ Profile set from /api/me:', enriched.email);
+        setProfile(enriched);
         setAuthStatus("authenticated");
         setLastAuthError(null);
       } else {
-        console.error("Profile not found for user:", session.user.id);
+        console.error("❌ Profile not found via /api/me for user:", session.user.id);
         setLastAuthError("Profile not found. Please contact support.");
         setProfile(null);
         setAuthStatus("anonymous");
       }
     } catch (error) {
-      console.error("Error loading profile:", error);
+      console.error("❌ Error loading profile:", error);
       setLastAuthError(error instanceof Error ? error.message : "Failed to load profile");
       setProfile(null);
       setAuthStatus("anonymous");
@@ -56,16 +74,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state listener
   useEffect(() => {
-    // Explicitly fetch initial session from cookies on mount
+    // Explicitly check session on mount via server-side /api/me
     const initializeSession = async () => {
-      console.log('🔍 SessionProvider: Fetching initial session from cookies...');
-      const { data: { session } } = await import("@/services/authService").then(m => m.getSession());
-      console.log('🔍 Initial session check:', { 
-        hasSession: !!session, 
-        userId: session?.user?.id,
-        userEmail: session?.user?.email 
-      });
-      await loadProfile(session);
+      try {
+        const res = await fetch('/api/me');
+        const { user } = await res.json();
+        if (user) {
+          console.log('🚀 initializeSession: user found', user.email);
+          setProfile(user);
+          setAuthStatus("authenticated");
+        } else {
+          console.log('🚀 initializeSession: no user');
+          setProfile(null);
+          setAuthStatus("anonymous");
+        }
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+        setAuthStatus("anonymous");
+      }
     };
 
     // Initialize session first
@@ -104,8 +130,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    const { data: { session } } = await import("@/services/authService").then(m => m.getSession());
-    await loadProfile(session);
+    try {
+      const res = await fetch('/api/me');
+      const { user } = await res.json();
+      if (user) {
+        setProfile(user);
+        setAuthStatus("authenticated");
+      } else {
+        setProfile(null);
+        setAuthStatus("anonymous");
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
   };
 
   return (
