@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@backend/lib/supabase/server';
+import { createAdminClient } from '@backend/lib/supabase/server';
 import { AdminService } from '@backend/services/AdminService';
 import { requireAdmin } from '../../../../lib/auth';
 
@@ -10,7 +10,7 @@ import { requireAdmin } from '../../../../lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const adminService = new AdminService(supabase);
 
     const { searchParams } = new URL(request.url);
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const user = await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const adminService = new AdminService(supabase);
 
     const body = await request.json();
@@ -105,7 +105,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const user = await requireAdmin();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const adminService = new AdminService(supabase);
 
     const { searchParams } = new URL(request.url);
