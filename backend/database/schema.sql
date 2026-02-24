@@ -10,9 +10,13 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL,
+  email TEXT,
   role TEXT NOT NULL CHECK (role IN ('user', 'member', 'moderator', 'organizer', 'admin')) DEFAULT 'user',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration: add email column if upgrading from older schema
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
 
 -- Enable RLS on profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

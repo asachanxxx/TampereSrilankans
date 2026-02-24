@@ -89,6 +89,28 @@ export async function handlePostAuth(authUser: User): Promise<AppUser> {
     const profile = await profileRepo.getProfileById(authUser.id);
     if (profile) {
       console.log('✅ Profile found for user:', authUser.email);
+
+      // Heal missing email or displayName (e.g. profiles created before email column existed)
+      const needsHeal =
+        (!profile.email || profile.email === 'unknown@example.com') ||
+        (!profile.displayName || profile.displayName === 'User');
+
+      if (needsHeal) {
+        console.log('🔧 Healing profile for user:', authUser.email);
+        const healedDisplayName = profile.displayName && profile.displayName !== 'User'
+          ? profile.displayName
+          : deriveDisplayName(authUser);
+        try {
+          const healed = await profileRepo.updateProfile(authUser.id, {
+            displayName: healedDisplayName,
+            email: authUser.email || profile.email,
+          });
+          return healed;
+        } catch (healErr) {
+          console.warn('⚠️ Could not heal profile, returning as-is:', healErr);
+        }
+      }
+
       return profile;
     }
   } catch (error) {

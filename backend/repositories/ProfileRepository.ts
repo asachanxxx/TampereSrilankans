@@ -52,6 +52,7 @@ export class ProfileRepository {
       .insert([{
         id: userId,
         display_name: displayName,
+        email: email,
         role: role,
         created_at: new Date().toISOString(),
       }])
@@ -66,9 +67,10 @@ export class ProfileRepository {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: { displayName?: string; role?: 'user' | 'member' | 'moderator' | 'organizer' | 'admin' }): Promise<AppUser> {
+  async updateProfile(userId: string, updates: { displayName?: string; email?: string; role?: 'user' | 'member' | 'moderator' | 'organizer' | 'admin' }): Promise<AppUser> {
     const dbUpdates: any = {};
     if (updates.displayName !== undefined) dbUpdates.display_name = updates.displayName;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
     if (updates.role !== undefined) dbUpdates.role = updates.role;
 
     const { data, error } = await this.supabase
@@ -134,9 +136,9 @@ export class ProfileRepository {
   private mapToAppUser(row: any, email?: string): AppUser {
     return {
       id: row.id,
-      name: row.display_name, // Using display_name as name
+      name: row.display_name,
       displayName: row.display_name,
-      email: email || 'unknown@example.com',
+      email: email || row.email || 'unknown@example.com',
       role: row.role,
       createdAt: row.created_at,
     };
