@@ -2,20 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@backend/lib/supabase/server';
 import { RegistrationService } from '@backend/services/RegistrationService';
 import { getCurrentUser, requireAuth } from '../../../lib/auth';
+import { sendTicketEmail } from '../../../lib/emailService';
 
 /**
  * POST /api/registrations
- * Register user for an event
+ * Register for an event.
+ * - If the request includes a valid session: authenticated registration.
+ * - If no session (guest=true): anonymous registration, ticket link emailed.
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth();
     const supabase = await createClient();
     const registrationService = new RegistrationService(supabase);
 
     const body = await request.json();
     const {
       eventId,
+      guest,          // boolean flag sent by the guest registration form
       fullName,
       whatsappNumber,
       email,
@@ -30,36 +33,62 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!eventId) {
+      return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
+    }
+
+    const formData = {
+      fullName,
+      whatsappNumber,
+      email,
+      spouseName,
+      childrenUnder7Count,
+      childrenOver7Count,
+      childrenNamesAndAges,
+      vegetarianMealCount,
+      nonVegetarianMealCount,
+      otherPreferences,
+      consentToStorePersonalData,
+    };
+
+    // ── Guest path ──────────────────────────────────────────────────────────
+    if (guest) {
+      const { registration, ticket } = await registrationService.registerGuest(eventId, formData);
+
+      // Fetch event title for the email
+      const { data: eventRow } = await supabase
+        .from('events')
+        .select('title')
+        .eq('id', eventId)
+        .single();
+
+      // Send ticket link email (non-blocking — log error but don't fail the response)
+      sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
+        .catch((err) => console.error('Failed to send ticket email:', err));
+
       return NextResponse.json(
-        { error: 'Event ID is required' },
-        { status: 400 }
+        {
+          registration,
+          ticketNumber: ticket.ticketNumber,
+          message: 'Successfully registered. Your ticket link has been sent to your email.',
+        },
+        { status: 201 }
       );
     }
 
-    // Register the authenticated user for the event
+    // ── Authenticated path ───────────────────────────────────────────────────
+    const user = await requireAuth();
+
     const registration = await registrationService.registerForEvent(
       user.id,
       eventId,
       user,
-      {
-        fullName,
-        whatsappNumber,
-        email,
-        spouseName,
-        childrenUnder7Count,
-        childrenOver7Count,
-        childrenNamesAndAges,
-        vegetarianMealCount,
-        nonVegetarianMealCount,
-        otherPreferences,
-        consentToStorePersonalData,
-      }
+      formData
     );
 
     return NextResponse.json(
-      { 
+      {
         registration,
-        message: 'Successfully registered for event. Ticket has been generated.' 
+        message: 'Successfully registered for event. Ticket has been generated.',
       },
       { status: 201 }
     );
@@ -67,13 +96,13 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/registrations error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to register for event' },
-      { 
+      {
         status: error.message?.includes('Authentication') ? 401
           : error.message?.includes('already registered') ? 409
           : error.message?.includes('not found') ? 404
           : error.message?.includes('permission') ? 403
-          : error.message?.includes('past event') ? 400
-          : 500 
+          : error.message?.includes('not open') ? 400
+          : 500,
       }
     );
   }

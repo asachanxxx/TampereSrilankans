@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -13,13 +13,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData } from "@/models/registration";
 import type { Event } from "@/models/event";
 
 export default function EventRegisterPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isGuest = searchParams.get("guest") === "true";
+
   const { currentUser } = useSession();
   const [event, setEvent] = useState<Event | null>(null);
   const [eventLoading, setEventLoading] = useState(true);
@@ -28,20 +31,21 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   const [formData, setFormData] = useState<RegistrationFormData>({
     fullName: currentUser?.displayName || "",
     email: currentUser?.email || "",
-    whatsappNumber: "+358 40 123 4567",
-    spouseName: "Jane Doe",
-    childrenUnder7Count: 1,
-    childrenOver7Count: 1,
-    childrenNamesAndAges: "Amal (3), Nimal (9)",
-    vegetarianMealCount: 2,
-    nonVegetarianMealCount: 1,
-    otherPreferences: "No nuts",
+    whatsappNumber: "",
+    spouseName: "",
+    childrenUnder7Count: 0,
+    childrenOver7Count: 0,
+    childrenNamesAndAges: "",
+    vegetarianMealCount: 0,
+    nonVegetarianMealCount: 0,
+    otherPreferences: "",
     consentToStorePersonalData: false,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
@@ -53,6 +57,17 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
       .catch(() => setEventNotFound(true))
       .finally(() => setEventLoading(false));
   }, [params.id]);
+
+  // Keep form in sync when user profile loads
+  useEffect(() => {
+    if (!isGuest && currentUser) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || currentUser.displayName || "",
+        email: prev.email || currentUser.email || "",
+      }));
+    }
+  }, [currentUser, isGuest]);
 
   if (eventLoading) {
     return (
@@ -81,12 +96,21 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
       return;
     }
 
+    if (isGuest && !formData.email) {
+      setError("Please provide your email address so we can send your ticket.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: params.id, ...formData }),
+        body: JSON.stringify({
+          eventId: params.id,
+          guest: isGuest,
+          ...formData,
+        }),
       });
 
       const json = await res.json();
@@ -95,6 +119,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         throw new Error(json.error || "Registration failed");
       }
 
+      setSubmittedEmail(formData.email);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -110,15 +135,29 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
           <div className="flex justify-center">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold">You're registered!</h1>
-          <p className="text-muted-foreground">
-            Your registration for <span className="font-medium text-foreground">{event.title}</span> was
-            successful. A ticket has been generated and is available in My Events.
-          </p>
+          <h1 className="text-2xl font-bold">You&apos;re registered!</h1>
+          {isGuest ? (
+            <>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <p>
+                  Your ticket link has been sent to <strong className="text-foreground">{submittedEmail}</strong>.
+                  Check your inbox (and spam folder) to access your ticket.
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              Your registration for <span className="font-medium text-foreground">{event.title}</span> was
+              successful. A ticket has been generated and is available in My Events.
+            </p>
+          )}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild>
-              <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
-            </Button>
+            {!isGuest && (
+              <Button asChild>
+                <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link href={`/events/${params.id}`}>Back to Event</Link>
             </Button>
@@ -144,8 +183,18 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
           <CardHeader>
             <CardTitle>Event Registration</CardTitle>
             <CardDescription>
-              Complete the form below to register for{" "}
-              <span className="font-medium text-foreground">{event.title}</span>
+              {isGuest ? (
+                <>
+                  Register without an account for{" "}
+                  <span className="font-medium text-foreground">{event.title}</span>. Your ticket
+                  link will be sent to your email address.
+                </>
+              ) : (
+                <>
+                  Complete the form below to register for{" "}
+                  <span className="font-medium text-foreground">{event.title}</span>
+                </>
+              )}
             </CardDescription>
           </CardHeader>
 
@@ -155,6 +204,15 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {isGuest && (
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>
+                    Your ticket link will be emailed to you after registration. No account required.
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -176,13 +234,21 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="email">
+                      Email <span className="text-destructive">*</span>
+                      {isGuest && (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">(ticket sent here)</span>
+                      )}
+                    </Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
-                      disabled
-                      className="bg-muted cursor-not-allowed"
+                      onChange={isGuest ? (e) => setField("email", e.target.value) : undefined}
+                      disabled={!isGuest || loading}
+                      className={!isGuest ? "bg-muted cursor-not-allowed" : ""}
+                      placeholder={isGuest ? "your@email.com" : undefined}
+                      required
                     />
                   </div>
                 </div>
@@ -339,4 +405,3 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
     </PublicLayout>
   );
 }
-

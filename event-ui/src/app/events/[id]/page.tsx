@@ -8,7 +8,7 @@ import { EventMetaRow } from "@/components/events/EventMetaRow";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/state/session";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, TicketX } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { Event } from "@/models/event";
 
@@ -48,73 +48,98 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
     notFound();
   }
 
-  // Registration button configuration
-  const getRegistrationButtonConfig = () => {
-    if (!event.registrationEnabled) {
-      return {
-        text: "Registration Unavailable",
-        variant: "secondary" as const,
-        disabled: true,
-      };
+  const isOngoing = event.statusId === "ongoing";
+  const isUpcoming = event.statusId === "upcoming";
+  const isTicketClosed = event.statusId === "ticket_closed";
+
+  /** Render the registration action area for the sidebar/mobile card */
+  const renderRegistrationContent = () => {
+    // Logged-in user who is already registered
+    if (currentUser && isRegistered) {
+      return (
+        <>
+          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            <span className="font-medium">You&apos;re registered for this event!</span>
+          </div>
+          <Button className="w-full" variant="outline" asChild>
+            <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
+          </Button>
+        </>
+      );
     }
 
-    if (!currentUser) {
-      return {
-        text: "Login to Register",
-        variant: "default" as const,
-        disabled: false,
-        href: "/auth",
-      };
+    // Event is upcoming — registration not open yet
+    if (isUpcoming) {
+      return (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Registration for this event is not yet open. Check back soon!
+          </p>
+          <Button className="w-full" variant="secondary" disabled>
+            Registration Not Yet Open
+          </Button>
+        </>
+      );
     }
 
-    if (isRegistered) {
-      return {
-        text: "Registered ✓",
-        variant: "secondary" as const,
-        disabled: true,
-      };
+    // Event is ticket_closed — no new registrations
+    if (isTicketClosed) {
+      return (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Ticketing for this event is now closed. No further registrations are accepted.
+          </p>
+          <Button className="w-full" variant="destructive" disabled>
+            <TicketX className="mr-2 h-4 w-4" /> Ticketing Closed
+          </Button>
+        </>
+      );
     }
 
-    switch (event.registrationStatus) {
-      case "on":
-        return {
-          text: "Register Here",
-          variant: "default" as const,
-          disabled: false,
-          href: `/events/${params.id}/register`,
-        };
-      case "soon":
-        return {
-          text: "Registration Opens Soon",
-          variant: "secondary" as const,
-          disabled: true,
-        };
-      case "close":
-        return {
-          text: "Registration Closed",
-          variant: "destructive" as const,
-          disabled: true,
-        };
-      default:
-        return {
-          text: "Register",
-          variant: "default" as const,
-          disabled: false,
-        };
+    // Event is ongoing — show registration options
+    if (isOngoing) {
+      if (currentUser) {
+        return (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Ready to join? Click below to register for this event.
+            </p>
+            <Button className="w-full" asChild>
+              <Link href={`/events/${params.id}/register`}>Register Here</Link>
+            </Button>
+          </>
+        );
+      }
+      // Unauthenticated — two options
+      return (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Sign in to register, or register without creating an account and receive your ticket by email.
+          </p>
+          <Button className="w-full" asChild>
+            <Link href="/auth">Login to Register</Link>
+          </Button>
+          <Button className="w-full" variant="outline" asChild>
+            <Link href={`/events/${params.id}/register?guest=true`}>Register without Sign in</Link>
+          </Button>
+        </>
+      );
     }
+
+    // Fallback (archive events should not reach this page via the public API)
+    return null;
   };
-
-  const buttonConfig = getRegistrationButtonConfig();
 
   return (
     <PublicLayout>
-      {/* Registration Closed Banner */}
-      {event.registrationEnabled && event.registrationStatus === "close" && (
+      {/* Ticketing Closed Banner */}
+      {isTicketClosed && (
         <div className="bg-destructive text-destructive-foreground">
           <div className="container mx-auto max-w-6xl px-4 py-3">
             <div className="flex items-center justify-center gap-2 text-sm font-medium">
-              <AlertCircle className="h-4 w-4" />
-              <span>Registration for this event is now closed</span>
+              <TicketX className="h-4 w-4" />
+              <span>Ticketing for this event is now closed</span>
             </div>
           </div>
         </div>
@@ -125,70 +150,17 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <EventDetailHeader event={event} />
-            
+
             <EventMetaRow event={event} />
 
-            {/* Registration Card - Mobile Only (shows below rating) */}
+            {/* Registration Card - Mobile Only */}
             <div className="lg:hidden">
               <Card>
                 <CardHeader>
                   <CardTitle>Registration</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {currentUser ? (
-                    <>
-                      {isRegistered ? (
-                        <>
-                          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                            <CheckCircle className="h-4 w-4" />
-                            <span className="font-medium">You're registered for this event!</span>
-                          </div>
-                          <Button
-                            className="w-full"
-                            variant="outline"
-                            asChild
-                          >
-                            <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            {event.registrationStatus === "on"
-                              ? "Ready to join? Click below to register for this event."
-                              : event.registrationStatus === "soon"
-                              ? "Registration will open soon. Check back later!"
-                              : "Registration for this event has closed."}
-                          </p>
-                          {buttonConfig.href ? (
-                            <Button className="w-full" variant={buttonConfig.variant} asChild>
-                              <Link href={buttonConfig.href}>{buttonConfig.text}</Link>
-                            </Button>
-                          ) : (
-                            <Button
-                              className="w-full"
-                              variant={buttonConfig.variant}
-                              disabled={buttonConfig.disabled}
-                            >
-                              {buttonConfig.text}
-                            </Button>
-                          )}
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Please login to register for this event and view your tickets.
-                      </p>
-                      <Button
-                        className="w-full"
-                        asChild
-                      >
-                        <Link href="/auth">Login to Register</Link>
-                      </Button>
-                    </>
-                  )}
+                  {renderRegistrationContent()}
                 </CardContent>
               </Card>
             </div>
@@ -212,66 +184,12 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <CardTitle>Registration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {currentUser ? (
-                  <>
-                    {isRegistered ? (
-                      <>
-                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="font-medium">You're registered for this event!</span>
-                        </div>
-                        <Button
-                          className="w-full"
-                          variant="outline"
-                          asChild
-                        >
-                          <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground">
-                          {event.registrationStatus === "on"
-                            ? "Ready to join? Click below to register for this event."
-                            : event.registrationStatus === "soon"
-                            ? "Registration will open soon. Check back later!"
-                            : "Registration for this event has closed."}
-                        </p>
-                        {buttonConfig.href ? (
-                          <Button className="w-full" variant={buttonConfig.variant} asChild>
-                            <Link href={buttonConfig.href}>{buttonConfig.text}</Link>
-                          </Button>
-                        ) : (
-                          <Button
-                            className="w-full"
-                            variant={buttonConfig.variant}
-                            disabled={buttonConfig.disabled}
-                          >
-                            {buttonConfig.text}
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      Please login to register for this event and view your tickets.
-                    </p>
-                    <Button
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href="/auth">Login to Register</Link>
-                    </Button>
-                  </>
-                )}
+                {renderRegistrationContent()}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-
     </PublicLayout>
   );
 }

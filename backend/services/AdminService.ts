@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AppUser } from '../../event-ui/src/models/user';
-import { Event } from '../../event-ui/src/models/event';
+import { Event, EventStatusId } from '../../event-ui/src/models/event';
 import { ProfileRepository } from '../repositories/ProfileRepository';
 import { EventRepository } from '../repositories/EventRepository';
 import { RegistrationRepository } from '../repositories/RegistrationRepository';
@@ -194,7 +194,7 @@ export class AdminService {
    */
   async bulkUpdateEventStatus(
     eventIds: string[],
-    newStatusId: string,
+    newStatusId: EventStatusId,
     user: AppUser | null
   ): Promise<void> {
     requireAdmin(user);

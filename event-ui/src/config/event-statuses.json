@@ -1,5 +1,6 @@
 [
   { "id": "upcoming", "label": "Upcoming" },
   { "id": "ongoing", "label": "Ongoing" },
-  { "id": "past", "label": "Past" }
+  { "id": "ticket_closed", "label": "Ticket Closed" },
+  { "id": "archive", "label": "Archive" }
 ]

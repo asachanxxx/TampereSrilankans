@@ -6,6 +6,7 @@ import { EventRepository } from '../repositories/EventRepository';
 import { RegistrationValidator } from '../validators/RegistrationValidator';
 import { requireAuth, canRegisterForEvent, isAdmin } from '../policies/accessControl';
 import { TicketService } from './TicketService';
+import { Ticket } from '../../event-ui/src/models/ticket';
 
 /**
  * RegistrationService - Business logic for event registrations
@@ -55,9 +56,9 @@ export class RegistrationService {
       throw new Error('You are already registered for this event');
     }
 
-    // Check event status - don't allow registration for past events
-    if (event.statusId === 'past') {
-      throw new Error('Cannot register for past events');
+    // Check event status - registration only allowed when event is ongoing
+    if (event.statusId !== 'ongoing') {
+      throw new Error('Registration is not open for this event');
     }
 
     // Register user
@@ -141,10 +142,10 @@ export class RegistrationService {
       throw new Error('You are not registered for this event');
     }
 
-    // Check event status - might not allow cancellation for ongoing/past events
+    // Check event status for cancellation
     const event = await this.eventRepo.getEventById(eventId);
-    if (event?.statusId === 'past') {
-      throw new Error('Cannot cancel registration for past events');
+    if (event?.statusId === 'archive') {
+      throw new Error('Cannot cancel registration for archived events');
     }
 
     // Cancel registration
@@ -160,5 +161,52 @@ export class RegistrationService {
     } catch (error) {
       console.error('Error handling ticket during cancellation:', error);
     }
+  }
+
+  /**
+   * Register a guest (non-authenticated user) for an event.
+   * Creates registration and ticket records with user_id = NULL.
+   * Returns the generated ticket so the caller can email the link.
+   */
+  async registerGuest(eventId: string, formData: RegistrationFormData): Promise<{ registration: Registration; ticket: Ticket }> {
+    // Validate inputs
+    RegistrationValidator.validateRegistrationData(formData);
+
+    if (!eventId || eventId.trim().length === 0) {
+      throw new Error('Event ID is required');
+    }
+
+    // Check event exists
+    const event = await this.eventRepo.getEventById(eventId);
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    // Only allow registration when event is ongoing
+    if (event.statusId !== 'ongoing') {
+      throw new Error('Registration is not open for this event');
+    }
+
+    // Check duplicate guest registration by email
+    const existingByEmail = await this.registrationRepo.isEmailRegisteredForEvent(formData.email, eventId);
+    if (existingByEmail) {
+      throw new Error('This email address is already registered for this event');
+    }
+
+    // Insert registration with user_id = null
+    const registration = await this.registrationRepo.registerGuest(eventId, formData);
+    if (!registration) {
+      throw new Error('Registration failed');
+    }
+
+    // Generate ticket with user_id = null
+    const ticket = await this.ticketService.generateTicket(
+      null,
+      eventId,
+      formData.fullName,
+      formData.email
+    );
+
+    return { registration, ticket };
   }
 }

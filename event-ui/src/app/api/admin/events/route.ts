@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@backend/lib/supabase/server';
 import { AdminService } from '@backend/services/AdminService';
 import { requireAdmin } from '../../../../lib/auth';
+import type { EventStatusId } from '@/models/event';
 
 /**
  * GET /api/admin/events
@@ -66,7 +67,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await adminService.bulkUpdateEventStatus(eventIds, statusId, user);
+    await adminService.bulkUpdateEventStatus(eventIds, statusId as EventStatusId, user);
 
     return NextResponse.json(
       { message: 'Events updated successfully' },

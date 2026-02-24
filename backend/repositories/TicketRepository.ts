@@ -21,7 +21,7 @@ export class TicketRepository {
    * Create a ticket for a user
    */
   async createTicket(
-    userId: string,
+    userId: string | null,
     eventId: string,
     issuedToName: string,
     issuedToEmail: string
@@ -31,7 +31,7 @@ export class TicketRepository {
     const { data, error } = await this.supabase
       .from('tickets')
       .insert([{
-        user_id: userId,
+        user_id: userId,   // null for guest tickets
         event_id: eventId,
         ticket_number: ticketNumber,
         issued_to_name: issuedToName,
@@ -54,6 +54,26 @@ export class TicketRepository {
       .from('tickets')
       .select('*')
       .eq('ticket_number', ticketNumber)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return data ? this.mapToTicket(data) : null;
+  }
+
+  /**
+   * Get a guest ticket for a specific event by email (user_id IS NULL)
+   */
+  async getGuestTicketForEvent(email: string, eventId: string): Promise<Ticket | null> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .select('*')
+      .is('user_id', null)
+      .eq('issued_to_email', email)
+      .eq('event_id', eventId)
       .single();
 
     if (error) {

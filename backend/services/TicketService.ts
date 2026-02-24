@@ -20,7 +20,7 @@ export class TicketService {
    * Typically called automatically after registration
    */
   async generateTicket(
-    userId: string,
+    userId: string | null,
     eventId: string,
     issuedToName: string,
     issuedToEmail: string
@@ -29,7 +29,9 @@ export class TicketService {
     RegistrationValidator.validateTicketGeneration(userId, eventId, issuedToName, issuedToEmail);
 
     // Check if ticket already exists for this user/event
-    const existingTicket = await this.ticketRepo.getUserTicketForEvent(userId, eventId);
+    const existingTicket = userId
+      ? await this.ticketRepo.getUserTicketForEvent(userId, eventId)
+      : await this.ticketRepo.getGuestTicketForEvent(issuedToEmail, eventId);
     if (existingTicket) {
       // Return existing ticket instead of creating duplicate
       return existingTicket;

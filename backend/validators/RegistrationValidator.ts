@@ -8,22 +8,23 @@ export class RegistrationValidator {
   /**
    * Validate registration request
    */
-  static validateRegistration(userId: string, eventId: string): void {
-    if (!userId || userId.trim().length === 0) {
-      throw new ValidationError('User ID is required', 'userId');
+  static validateRegistration(userId: string | null, eventId: string): void {
+    // userId may be null for guest registrations
+    if (userId !== null) {
+      if (!userId || userId.trim().length === 0) {
+        throw new ValidationError('User ID is required', 'userId');
+      }
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        throw new ValidationError('Invalid user ID format', 'userId');
+      }
     }
 
     if (!eventId || eventId.trim().length === 0) {
       throw new ValidationError('Event ID is required', 'eventId');
     }
 
-    // Validate UUID format (basic check)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    
-    if (!uuidRegex.test(userId)) {
-      throw new ValidationError('Invalid user ID format', 'userId');
-    }
-
     if (!uuidRegex.test(eventId)) {
       throw new ValidationError('Invalid event ID format', 'eventId');
     }
@@ -33,7 +34,7 @@ export class RegistrationValidator {
    * Validate ticket generation parameters
    */
   static validateTicketGeneration(
-    userId: string,
+    userId: string | null,
     eventId: string,
     issuedToName: string,
     issuedToEmail: string

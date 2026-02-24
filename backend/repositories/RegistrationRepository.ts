@@ -45,7 +45,55 @@ export class RegistrationRepository {
   }
 
   /**
-   * Check if user is already registered for an event
+   * Register a guest (user_id = null) for an event
+   */
+  async registerGuest(eventId: string, data: RegistrationFormData): Promise<Registration | null> {
+    const { data: row, error } = await this.supabase
+      .from('event_registrations')
+      .insert([{
+        user_id: null,
+        event_id: eventId,
+        registered_at: new Date().toISOString(),
+        full_name: data.fullName,
+        whatsapp_number: data.whatsappNumber ?? null,
+        email: data.email,
+        spouse_name: data.spouseName ?? null,
+        children_under_7_count: data.childrenUnder7Count ?? 0,
+        children_over_7_count: data.childrenOver7Count ?? 0,
+        children_names_and_ages: data.childrenNamesAndAges ?? null,
+        vegetarian_meal_count: data.vegetarianMealCount ?? 0,
+        non_vegetarian_meal_count: data.nonVegetarianMealCount ?? 0,
+        other_preferences: data.otherPreferences ?? null,
+        consent_to_store_personal_data: data.consentToStorePersonalData,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') return null; // Duplicate (guest email uniqueness index)
+      throw error;
+    }
+
+    return this.mapToRegistration(row);
+  }
+
+  /**
+   * Check if an email is already registered for an event (for guest deduplication)
+   */
+  async isEmailRegisteredForEvent(email: string, eventId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('email', email)
+      .eq('event_id', eventId)
+      .limit(1);
+
+    if (error) throw error;
+    return (data?.length ?? 0) > 0;
+  }
+
+  /**
+   * Check if a user is already registered for an event
    */
   async isUserRegistered(userId: string, eventId: string): Promise<boolean> {
     const { data, error } = await this.supabase

@@ -187,7 +187,7 @@ CREATE POLICY "Only admins can delete events"
 CREATE TABLE IF NOT EXISTS event_registrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,   -- NULL for guest registrations
   registered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   full_name TEXT NOT NULL,
   whatsapp_number TEXT,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
   non_vegetarian_meal_count INT NOT NULL DEFAULT 0,
   other_preferences TEXT,
   consent_to_store_personal_data BOOLEAN NOT NULL DEFAULT false,
-  UNIQUE(event_id, user_id)
+  UNIQUE(event_id, user_id)   -- enforces uniqueness for authenticated users; NULLs bypass this (expected)
 );
 
 -- Enable RLS on event_registrations
@@ -209,7 +209,7 @@ ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
 -- Event registrations policies
 CREATE POLICY "Users can register themselves"
   ON event_registrations FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
 CREATE POLICY "Users can view own registrations"
   ON event_registrations FOR SELECT
@@ -234,7 +234,7 @@ CREATE POLICY "Users can delete own registrations"
 CREATE TABLE IF NOT EXISTS tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,   -- NULL for guest tickets
   ticket_number TEXT NOT NULL UNIQUE,
   issued_to_name TEXT NOT NULL DEFAULT '',
   issued_to_email TEXT NOT NULL DEFAULT '',
@@ -249,6 +249,10 @@ CREATE POLICY "Users can view own tickets"
   ON tickets FOR SELECT
   USING (auth.uid() = user_id);
 
+CREATE POLICY "Public can view ticket by number"
+  ON tickets FOR SELECT
+  USING (true);  -- ticket_number is unguessable; server filters by ticket_number
+
 CREATE POLICY "Admins can view all tickets"
   ON tickets FOR SELECT
   USING (
@@ -261,6 +265,11 @@ CREATE POLICY "Admins can view all tickets"
 CREATE POLICY "System can insert tickets"
   ON tickets FOR INSERT
   WITH CHECK (true);
+
+-- Guest registration uniqueness: one registration per email per event for anonymous users
+CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_guest_email
+  ON event_registrations(event_id, email)
+  WHERE user_id IS NULL;
 
 -- =====================================================
 -- 6. Create indexes for performance
@@ -304,7 +313,36 @@ CREATE TRIGGER on_auth_user_created
 -- UPDATE profiles SET role = 'admin' WHERE id = 'your-user-id-here';
 
 -- =====================================================
--- 9. Setup Complete!
+-- 9. Migration: apply to existing databases
+-- =====================================================
+-- Run these if upgrading from the previous schema:
+--
+-- Step 1: Allow NULLs in user_id columns (guest support)
+-- ALTER TABLE event_registrations ALTER COLUMN user_id DROP NOT NULL;
+-- ALTER TABLE tickets ALTER COLUMN user_id DROP NOT NULL;
+--
+-- Step 2: Drop old FK on CASCADE DELETE (replaced with SET NULL)
+-- ALTER TABLE event_registrations DROP CONSTRAINT IF EXISTS event_registrations_user_id_fkey;
+-- ALTER TABLE event_registrations ADD CONSTRAINT event_registrations_user_id_fkey
+--   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+-- ALTER TABLE tickets DROP CONSTRAINT IF EXISTS tickets_user_id_fkey;
+-- ALTER TABLE tickets ADD CONSTRAINT tickets_user_id_fkey
+--   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+--
+-- Step 3: Add guest uniqueness index
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_guest_email
+--   ON event_registrations(event_id, email) WHERE user_id IS NULL;
+--
+-- Step 4: Add public ticket read policy
+-- CREATE POLICY "Public can view ticket by number" ON tickets FOR SELECT USING (true);
+--
+-- Step 5: Update registration insert policy
+-- DROP POLICY IF EXISTS "Users can register themselves" ON event_registrations;
+-- CREATE POLICY "Users can register themselves"
+--   ON event_registrations FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+-- =====================================================
+-- 10. Setup Complete!
 -- =====================================================
 -- Next steps:
 -- 1. Enable Email auth in Supabase Dashboard > Authentication > Providers

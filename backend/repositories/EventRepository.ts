@@ -16,6 +16,7 @@ export class EventRepository {
       .from('events')
       .select('*')
       .eq('visibility_id', 'public')
+      .neq('status_id', 'archive')
       .order('event_date', { ascending: true });
 
     if (error) throw error;
@@ -104,7 +105,7 @@ export class EventRepository {
       .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
 
     if (publicOnly) {
-      queryBuilder = queryBuilder.eq('visibility_id', 'public');
+      queryBuilder = queryBuilder.eq('visibility_id', 'public').neq('status_id', 'archive');
     }
 
     const { data, error } = await queryBuilder.order('event_date', { ascending: true });
@@ -123,7 +124,7 @@ export class EventRepository {
       .eq('category_id', categoryId);
 
     if (publicOnly) {
-      queryBuilder = queryBuilder.eq('visibility_id', 'public');
+      queryBuilder = queryBuilder.eq('visibility_id', 'public').neq('status_id', 'archive');
     }
 
     const { data, error } = await queryBuilder.order('event_date', { ascending: true });
@@ -156,8 +157,6 @@ export class EventRepository {
       aboutSectionTitle: row.about_section_title,
       organizerName: row.organizer_name,
       createdAt: row.created_at,
-      registrationEnabled: row.registration_enabled,
-      registrationStatus: row.registration_status,
     };
   }
 
@@ -184,8 +183,6 @@ export class EventRepository {
     if (event.description !== undefined) row.description = event.description;
     if (event.aboutSectionTitle !== undefined) row.about_section_title = event.aboutSectionTitle;
     if (event.organizerName !== undefined) row.organizer_name = event.organizerName;
-    if (event.registrationEnabled !== undefined) row.registration_enabled = event.registrationEnabled;
-    if (event.registrationStatus !== undefined) row.registration_status = event.registrationStatus;
     
     return row;
   }

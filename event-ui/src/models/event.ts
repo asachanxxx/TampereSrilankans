@@ -3,7 +3,7 @@ export type EventRating = {
   count: number;   // number of ratings
 };
 
-export type RegistrationStatus = "on" | "close" | "soon";
+export type EventStatusId = "upcoming" | "ongoing" | "ticket_closed" | "archive";
 
 export type Event = {
   id: string;
@@ -19,7 +19,7 @@ export type Event = {
   // Legacy UI field (can be computed from ratingAverage/ratingCount)
   rating?: EventRating;  // optional
 
-  statusId: string;      // from JSON
+  statusId: EventStatusId; // upcoming | ongoing | ticket_closed | archive
   categoryId: string;    // from JSON
   visibilityId: string;  // from JSON
 
@@ -36,10 +36,6 @@ export type Event = {
 
   // About section (customizable)
   aboutSectionTitle?: string; // Default: "About This Event"
-
-  // Registration configuration (UI-computed or optional)
-  registrationEnabled?: boolean;        // Master switch for registration
-  registrationStatus?: RegistrationStatus; // Current status
 
   organizerName: string;
   createdAt?: string; // ISO datetime - when event was created

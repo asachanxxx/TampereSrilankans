@@ -5,7 +5,7 @@ import { getCurrentUser, requireAuth } from '../../../lib/auth';
 
 /**
  * GET /api/tickets
- * Get tickets for a user or verify a ticket
+ * Get tickets for a user or view/verify a ticket by number (public).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -23,16 +23,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result, { status: 200 });
     }
 
-    // Ticket lookup by number (public - no auth required)
+    // Public ticket lookup by number — includes event title for the public ticket page
     if (ticketNumber) {
       const ticket = await ticketService.getTicketByNumber(ticketNumber);
       if (!ticket) {
-        return NextResponse.json(
-          { error: 'Ticket not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
       }
-      return NextResponse.json({ ticket }, { status: 200 });
+      // Fetch event title to display on the ticket page
+      const { data: eventRow } = await supabase
+        .from('events')
+        .select('title, event_date, location_name, city')
+        .eq('id', ticket.eventId)
+        .single();
+
+      return NextResponse.json({ ticket, event: eventRow ?? null }, { status: 200 });
     }
 
     // User tickets - requires authentication
@@ -42,10 +46,7 @@ export async function GET(request: NextRequest) {
       // Get user's ticket for specific event
       const ticket = await ticketService.getUserTicketForEvent(user.id, eventId, user);
       if (!ticket) {
-        return NextResponse.json(
-          { error: 'Ticket not found for this event' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Ticket not found for this event' }, { status: 404 });
       }
       return NextResponse.json({ ticket }, { status: 200 });
     } else {

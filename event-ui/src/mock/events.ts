@@ -18,8 +18,6 @@ export const mockEvents: Event[] = [
     shortDescription: "Join us to celebrate the Sinhala and Tamil New Year with traditional games, food, and cultural performances.",
     description: "Experience the vibrant celebrations of Sri Lankan New Year with our community! Enjoy traditional games like breaking the pot (kana mutti bindeema), pillow fights (kotta pora), and tug of war. Savor authentic Sri Lankan cuisine including kiribath, kokis, and kavum. Watch traditional dance performances and participate in cultural activities. A family-friendly event perfect for all ages. Bring your family and friends to celebrate our rich cultural heritage together!",
     aboutSectionTitle: "About This Event",
-    registrationEnabled: true,
-    registrationStatus: "on",
     organizerName: "Sri Lankan Association in Tampere",
   },
   {
@@ -39,8 +37,6 @@ export const mockEvents: Event[] = [
     shortDescription: "Annual cricket tournament bringing together teams from across the region for a day of exciting matches.",
     description: "The Tampere Cricket Tournament returns for another thrilling season! Watch as local and regional teams compete in this exciting one-day cricket championship. Whether you're a cricket enthusiast or new to the sport, this event promises a day of competitive matches, sportsmanship, and community spirit. Food and refreshments will be available throughout the day. Free entry for spectators. Teams interested in participating should register in advance.",
     aboutSectionTitle: "Tournament Information",
-    registrationEnabled: true,
-    registrationStatus: "soon",
     organizerName: "Sri Lankan Association in Tampere",
   },
   {
@@ -60,8 +56,6 @@ export const mockEvents: Event[] = [
     shortDescription: "Enjoy beach volleyball games followed by an evening party with music, food, and fun by the lake.",
     description: "Summer is here! Join us for an action-packed day of beach volleyball at beautiful Rauhaniemi Beach. Form teams and compete in friendly matches throughout the afternoon. As the sun sets, we'll transition into a beach party featuring live music, BBQ, and refreshments. Bring your sports gear, swimwear, and party spirit! Both competitive players and casual participants welcome. Don't forget sunscreen and a beach towel. This is the perfect opportunity to enjoy summer, stay active, and socialize with the community.",
     aboutSectionTitle: "Event Details",
-    registrationEnabled: true,
-    registrationStatus: "on",
     organizerName: "Sri Lankan Association in Tampere",
   },
   {
@@ -81,8 +75,6 @@ export const mockEvents: Event[] = [
     shortDescription: "End the year in style with live music performances, DJ sets, traditional and modern dance, and festive celebrations.",
     description: "Ring out the old year with our spectacular Year End Musical Party! Enjoy an evening of diverse musical entertainment featuring live Sri Lankan and international artists, traditional Kandyan and Bharatanatyam dance performances, and modern DJ sets to keep you dancing all night. Dress in your finest attire and join us for a memorable evening of music, dance, food, and celebration. The event includes a festive dinner buffet with a fusion of Sri Lankan and international cuisine. Limited tickets available - book early to secure your spot for this grand celebration!",
     aboutSectionTitle: "About This Party",
-    registrationEnabled: true,
-    registrationStatus: "close",
     organizerName: "Sri Lankan Association in Tampere",
   },
 ];
