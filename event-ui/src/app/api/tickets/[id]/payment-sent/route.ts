@@ -25,9 +25,13 @@ export async function PATCH(
     const supabase = createAdminClient();
     const ticketService = new TicketService(supabase);
 
-    const { ticket, paymentMessage } = await ticketService.markPaymentSent(params.id, actor);
+    const { ticket, whatsappMessage, emailMessage, emailSubject } =
+      await ticketService.markPaymentSent(params.id, actor);
 
-    return NextResponse.json({ ticket, paymentMessage }, { status: 200 });
+    return NextResponse.json(
+      { ticket, whatsappMessage, emailMessage, emailSubject },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('PATCH /api/tickets/[id]/payment-sent error:', error);
     const status =

@@ -5,6 +5,7 @@ import { AppUser } from '../../event-ui/src/models/user';
 import { TicketRepository } from '../repositories/TicketRepository';
 import { RegistrationValidator } from '../validators/RegistrationValidator';
 import { requireAuth, isAdmin, isOrganizer, AuthorizationError } from '../policies/accessControl';
+import { TemplateService, TemplateData } from './TemplateService';
 
 /**
  * TicketService - Business logic for ticket operations
@@ -160,17 +161,17 @@ export class TicketService {
   /**
    * Mark payment details as sent to the attendee.
    * The actual message is sent manually by the staff member (via WhatsApp, email, etc.).
-   * Returns both the updated ticket and a ready-to-copy payment message string.
+   * Returns the updated ticket plus pre-rendered WhatsApp and email messages.
    *
    * Rules:
    *  - Actor must be organizer, moderator, or admin.
    *  - Ticket must be assigned (assigned_to_id must be set).
-   *  - payment_status must be NULL (not already actioned).
+   *  - payment_status must not be 'paid' (resend allowed otherwise).
    */
   async markPaymentSent(
     ticketId: string,
     actor: AppUser | null
-  ): Promise<{ ticket: Ticket; paymentMessage: string }> {
+  ): Promise<{ ticket: Ticket; whatsappMessage: string; emailMessage: string; emailSubject: string }> {
     requireAuth(actor);
     if (!isOrganizer(actor)) {
       throw new AuthorizationError('Only organizers, moderators, and admins can send payment details');
@@ -185,7 +186,7 @@ export class TicketService {
     if (ticket.paymentStatus === 'paid') {
       throw new Error('Payment has already been confirmed as paid — cannot resend details');
     }
-    // paymentStatus === 'payment_sent' → allow resend (regenerate message, update timestamp)
+    // paymentStatus === 'payment_sent' → allow resend (regenerate messages, update timestamp)
 
     // Fetch event payment instructions
     const { data: eventRow, error: eventError } = await this.supabase
@@ -196,13 +197,115 @@ export class TicketService {
     if (eventError) throw eventError;
 
     const updatedTicket = await this.ticketRepo.markPaymentSent(ticketId);
-    const paymentMessage = this.buildPaymentMessage(
-      updatedTicket,
-      eventRow?.title ?? 'Event',
-      eventRow?.payment_instructions ?? null
-    );
 
-    return { ticket: updatedTicket, paymentMessage };
+    const instructions: EventPaymentInstructions | null =
+      eventRow?.payment_instructions ?? null;
+    const hasInstructions = instructions !== null;
+
+    // Build template data
+    const templateData: TemplateData = {
+      display_name: updatedTicket.issuedToName,
+      event_name: eventRow?.title ?? 'Event',
+      ticket_number: updatedTicket.ticketNumber,
+      amount: hasInstructions
+        ? `${instructions!.currency} ${instructions!.amountPerPerson.toFixed(2)}`
+        : '',
+      due_date: hasInstructions
+        ? (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + (instructions!.paymentDeadlineDays ?? 7));
+            return d.toLocaleDateString('fi-FI');
+          })()
+        : '',
+      bank_name: instructions?.bankName,
+      iban: instructions?.iban,
+      account_holder: instructions?.accountHolder,
+      reference: hasInstructions && instructions!.referenceFormat
+        ? instructions!.referenceFormat.replace('{ticket_number}', updatedTicket.ticketNumber)
+        : updatedTicket.ticketNumber,
+      notes: instructions?.notes,
+    };
+
+    const templateKey = hasInstructions
+      ? 'payment_reminder'
+      : 'payment_no_instructions';
+
+    const templateService = new TemplateService();
+    const whatsapp = templateService.render(`${templateKey}_whatsapp`, 'whatsapp', templateData);
+    const email = templateService.render(`${templateKey}_email`, 'email', templateData);
+
+    return {
+      ticket: updatedTicket,
+      whatsappMessage: whatsapp.body,
+      emailMessage: email.body,
+      emailSubject: email.subject ?? `Payment details for ${templateData.event_name}`,
+    };
+  }
+
+  /**
+   * Preview the payment message for a ticket without updating its status.
+   * Useful for staff to see the exact message before (or after) sending it.
+   *
+   * Rules:
+   *  - Actor must be organizer, moderator, or admin.
+   *  - Ticket must exist.
+   */
+  async previewPaymentMessage(
+    ticketId: string,
+    actor: AppUser | null
+  ): Promise<{ whatsappMessage: string; emailMessage: string; emailSubject: string }> {
+    requireAuth(actor);
+    if (!isOrganizer(actor)) {
+      throw new AuthorizationError('Only organizers, moderators, and admins can preview payment messages');
+    }
+
+    const ticket = await this.ticketRepo.getTicketById(ticketId);
+    if (!ticket) throw new Error('Ticket not found');
+
+    const { data: eventRow, error: eventError } = await this.supabase
+      .from('events')
+      .select('title, payment_instructions')
+      .eq('id', ticket.eventId)
+      .single();
+    if (eventError) throw eventError;
+
+    const instructions: EventPaymentInstructions | null =
+      eventRow?.payment_instructions ?? null;
+    const hasInstructions = instructions !== null;
+
+    const templateData: TemplateData = {
+      display_name: ticket.issuedToName,
+      event_name: eventRow?.title ?? 'Event',
+      ticket_number: ticket.ticketNumber,
+      amount: hasInstructions
+        ? `${instructions!.currency} ${instructions!.amountPerPerson.toFixed(2)}`
+        : '',
+      due_date: hasInstructions
+        ? (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + (instructions!.paymentDeadlineDays ?? 7));
+            return d.toLocaleDateString('fi-FI');
+          })()
+        : '',
+      bank_name: instructions?.bankName,
+      iban: instructions?.iban,
+      account_holder: instructions?.accountHolder,
+      reference: hasInstructions && instructions!.referenceFormat
+        ? instructions!.referenceFormat.replace('{ticket_number}', ticket.ticketNumber)
+        : ticket.ticketNumber,
+      notes: instructions?.notes,
+    };
+
+    const templateKey = hasInstructions ? 'payment_reminder' : 'payment_no_instructions';
+    const templateService = new TemplateService();
+    const whatsapp = templateService.render(`${templateKey}_whatsapp`, 'whatsapp', templateData);
+    const email = templateService.render(`${templateKey}_email`, 'email', templateData);
+
+    return {
+      whatsappMessage: whatsapp.body,
+      emailMessage: email.body,
+      emailSubject: email.subject ?? `Payment details for ${templateData.event_name}`,
+    };
   }
 
   /**
@@ -266,57 +369,5 @@ export class TicketService {
     return this.ticketRepo.markBoarded(ticketId, boardedById);
   }
 
-  // -------------------------------------------------------
-  // Private helpers
-  // -------------------------------------------------------
-
-  /**
-   * Build a ready-to-copy payment message for the staff member to send
-   * to the attendee via WhatsApp, email, or other channel.
-   */
-  private buildPaymentMessage(
-    ticket: Ticket,
-    eventTitle: string,
-    instructions: EventPaymentInstructions | null
-  ): string {
-    if (!instructions) {
-      return (
-        `Hi ${ticket.issuedToName},\n\n` +
-        `Your ticket ${ticket.ticketNumber} for "${eventTitle}" has been confirmed.\n\n` +
-        `Please contact the organizer for payment details.\n`
-      );
-    }
-
-    // Compute payment deadline
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + (instructions.paymentDeadlineDays ?? 7));
-    const deadlineStr = deadline.toLocaleDateString('fi-FI'); // e.g. "4.3.2026"
-
-    // Merge ticket number into reference format
-    const reference = instructions.referenceFormat
-      ? instructions.referenceFormat.replace('{ticket_number}', ticket.ticketNumber)
-      : ticket.ticketNumber;
-
-    const lines = [
-      `Hi ${ticket.issuedToName},`,
-      ``,
-      `Your ticket ${ticket.ticketNumber} for "${eventTitle}" is confirmed.`,
-      `Please transfer the payment:`,
-      ``,
-      `  Bank:      ${instructions.bankName}`,
-      `  IBAN:      ${instructions.iban}`,
-      `  Account:   ${instructions.accountHolder}`,
-      `  Amount:    ${instructions.currency} ${instructions.amountPerPerson.toFixed(2)}`,
-      `  Reference: ${reference}`,
-      `  Pay by:    ${deadlineStr}`,
-    ];
-
-    if (instructions.notes) {
-      lines.push(``, `Note: ${instructions.notes}`);
-    }
-
-    lines.push(``, `Questions? Reply to this message.`);
-
-    return lines.join('\n');
-  }
 }
+

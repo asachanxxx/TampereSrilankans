@@ -13,6 +13,7 @@ import {
   CalendarDays,
   TicketX,
   Pencil,
+  Eye,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -20,6 +21,7 @@ import ticketStatuses from "@/config/ticket-statuses.json";
 import { TicketAssignDropdown } from "./TicketAssignDropdown";
 import { TicketStatusControl } from "./TicketStatusControl";
 import { TicketEditDialog } from "./TicketEditDialog";
+import { PaymentMessageDialog } from "./PaymentMessageDialog";
 
 interface Props {
   eventId: string;
@@ -62,6 +64,26 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<TicketStage | "all">("all");
   const [editTarget, setEditTarget] = useState<TicketModel | null>(null);
+  const [paymentMessages, setPaymentMessages] = useState<{
+    whatsappMessage: string;
+    emailMessage: string;
+    emailSubject: string;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+
+  const handlePreview = async (ticketId: string) => {
+    setPreviewLoading(ticketId);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/payment-preview`);
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const data = await res.json();
+      setPaymentMessages(data);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
 
   const load = () => {
     setLoading(true);
@@ -181,6 +203,16 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        title="Preview payment message"
+                        disabled={previewLoading === ticket.id}
+                        onClick={() => handlePreview(ticket.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8"
                         onClick={() => setEditTarget(ticket)}
                       >
@@ -246,6 +278,16 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
             handleTicketUpdate(updated);
             setEditTarget(null);
           }}
+        />
+      )}
+
+      {paymentMessages && (
+        <PaymentMessageDialog
+          whatsappMessage={paymentMessages.whatsappMessage}
+          emailMessage={paymentMessages.emailMessage}
+          emailSubject={paymentMessages.emailSubject}
+          open={!!paymentMessages}
+          onClose={() => setPaymentMessages(null)}
         />
       )}
     </div>

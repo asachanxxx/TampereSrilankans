@@ -1,0 +1,24 @@
+[
+    {
+        "template_key": "payment_reminder_whatsapp",
+        "channel": "whatsapp",
+        "body": "Hi {{display_name}},\n\nYour ticket *{{ticket_number}}* for *{{event_name}}* is confirmed. Please send your payment:\n\n🏦 Bank: {{bank_name}}\nIBAN: {{iban}}\nAccount: {{account_holder}}\nAmount: {{amount}}\nReference: {{reference}}\nPay by: {{due_date}}\n{{notes_block}}\nQuestions? Reply to this message."
+    },
+    {
+        "template_key": "payment_reminder_email",
+        "channel": "email",
+        "subject": "Payment details for {{event_name}} — ticket {{ticket_number}}",
+        "body": "Hi {{display_name}},\n\nThank you for registering for {{event_name}}. Your ticket number is {{ticket_number}}.\n\nPlease transfer the payment using the details below:\n\n  Bank:      {{bank_name}}\n  IBAN:      {{iban}}\n  Account:   {{account_holder}}\n  Amount:    {{amount}}\n  Reference: {{reference}}\n  Pay by:    {{due_date}}\n{{notes_block}}\nIf you have any questions, please reply to this email.\n\nBest regards,\nThe Organising Team"
+    },
+    {
+        "template_key": "payment_no_instructions_whatsapp",
+        "channel": "whatsapp",
+        "body": "Hi {{display_name}},\n\nYour ticket *{{ticket_number}}* for *{{event_name}}* has been confirmed.\n\nPlease contact the organiser for payment details.\n\nThank you!"
+    },
+    {
+        "template_key": "payment_no_instructions_email",
+        "channel": "email",
+        "subject": "Ticket confirmed for {{event_name}} — {{ticket_number}}",
+        "body": "Hi {{display_name}},\n\nYour ticket {{ticket_number}} for {{event_name}} has been confirmed.\n\nThe organiser will be in touch with payment details shortly.\n\nBest regards,\nThe Organising Team"
+    }
+]

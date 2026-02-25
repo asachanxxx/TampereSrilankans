@@ -14,6 +14,7 @@ import {
   Send,
   CheckCircle,
   Ticket as TicketIcon,
+  Eye,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -49,7 +50,26 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<TicketStage | "all" | "needs_action">("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
+  const [paymentMessages, setPaymentMessages] = useState<{
+    whatsappMessage: string;
+    emailMessage: string;
+    emailSubject: string;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+
+  const handlePreview = async (ticketId: string) => {
+    setPreviewLoading(ticketId);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/payment-preview`);
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const data = await res.json();
+      setPaymentMessages(data);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -100,9 +120,9 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
     try {
       const res = await fetch(`/api/tickets/${ticketId}/payment-sent`, { method: "PATCH" });
       if (!res.ok) throw new Error((await res.json()).error || "Failed");
-      const { ticket, paymentMessage: msg } = await res.json();
+      const { ticket, whatsappMessage, emailMessage, emailSubject } = await res.json();
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? ticket : t)));
-      if (msg) setPaymentMessage(msg);
+      if (whatsappMessage) setPaymentMessages({ whatsappMessage, emailMessage, emailSubject });
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -277,7 +297,17 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                   )}
 
                   {/* Action buttons */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handlePreview(ticket.id)}
+                      disabled={previewLoading === ticket.id}
+                      className="gap-1.5 text-muted-foreground"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Preview Message
+                    </Button>
                     {stage === "assigned" && (
                       <Button
                         size="sm"
@@ -331,11 +361,13 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
       )}
 
       {/* Payment message modal */}
-      {paymentMessage && (
+      {paymentMessages && (
         <PaymentMessageDialog
-          paymentMessage={paymentMessage}
-          open={!!paymentMessage}
-          onClose={() => setPaymentMessage(null)}
+          whatsappMessage={paymentMessages.whatsappMessage}
+          emailMessage={paymentMessages.emailMessage}
+          emailSubject={paymentMessages.emailSubject}
+          open={!!paymentMessages}
+          onClose={() => setPaymentMessages(null)}
         />
       )}
     </div>
