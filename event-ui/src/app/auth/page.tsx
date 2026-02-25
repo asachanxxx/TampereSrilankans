@@ -14,7 +14,12 @@ export default function AuthPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (authStatus === "authenticated" && profile) {
-      const redirectTo = profile.role === "admin" ? "/admin" : "/me";
+      let redirectTo = "/me";
+      if (profile.role === "admin") {
+        redirectTo = "/admin";
+      } else if (profile.role === "organizer" || profile.role === "moderator") {
+        redirectTo = "/admin/event-management";
+      }
       router.push(redirectTo);
     }
   }, [authStatus, profile, router]);

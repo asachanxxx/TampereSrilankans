@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Settings, CalendarDays } from "lucide-react";
+import { LogOut, Settings, CalendarDays, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -53,12 +53,26 @@ export function UserMenuDropdown() {
         </DropdownMenuItem>
         {profile.role === "admin" && (
           <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground py-1">Admin</DropdownMenuLabel>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/admin">
-                <Settings className="mr-2 h-4 w-4" />
+                <ShieldCheck className="mr-2 h-4 w-4" />
                 Admin Dashboard
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/admin/event-management">
+                <CalendarDays className="mr-2 h-4 w-4" />
+                Event Management
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        {(profile.role === "organizer" || profile.role === "moderator") && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground py-1">Staff</DropdownMenuLabel>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/admin/event-management">
                 <CalendarDays className="mr-2 h-4 w-4" />

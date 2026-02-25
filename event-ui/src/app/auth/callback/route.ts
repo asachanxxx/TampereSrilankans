@@ -94,7 +94,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Redirect based on role
-    const redirectTo = profile.role === 'admin' ? '/admin' : '/me';
+    let redirectTo = '/me';
+    if (profile.role === 'admin') {
+      redirectTo = '/admin';
+    } else if (profile.role === 'organizer' || profile.role === 'moderator') {
+      redirectTo = '/admin/event-management';
+    }
     console.log('🎯 REDIRECTING TO:', redirectTo);
     return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);
 

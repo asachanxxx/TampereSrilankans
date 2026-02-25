@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@backend/lib/supabase/server';
 import { TicketService } from '@backend/services/TicketService';
-import { requireAuth } from '../../../../lib/auth';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * PATCH /api/tickets/[id]/paid
