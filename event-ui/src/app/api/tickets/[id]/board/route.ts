@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@backend/lib/supabase/server';
+import { createAdminClient } from '@backend/lib/supabase/server';
 import { TicketService } from '@backend/services/TicketService';
 import { requireAuth } from '@/lib/auth';
 
@@ -24,7 +24,7 @@ export async function PATCH(
 ) {
   try {
     const actor = await requireAuth();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const ticketService = new TicketService(supabase);
 
     // The actor (staff member scanning QR) is recorded as the boarder

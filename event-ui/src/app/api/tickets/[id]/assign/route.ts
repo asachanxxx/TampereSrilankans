@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@backend/lib/supabase/server';
+import { createAdminClient } from '@backend/lib/supabase/server';
 import { TicketService } from '@backend/services/TicketService';
 import { requireAuth } from '@/lib/auth';
 
@@ -17,16 +17,17 @@ export async function PATCH(
 ) {
   try {
     const actor = await requireAuth();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const ticketService = new TicketService(supabase);
 
     const ticketId = params.id;
 
-    // Parse body — assigneeId is optional; defaults to the acting user's ID
+    // Parse body — assignedToId (or legacy assigneeId) defaults to the acting user's ID
     let assigneeId: string = actor.id;
     try {
       const body = await request.json();
-      if (body?.assigneeId) assigneeId = body.assigneeId;
+      if (body?.assignedToId) assigneeId = body.assignedToId;
+      else if (body?.assigneeId) assigneeId = body.assigneeId;
     } catch {
       // empty body is fine — we default to self-assignment
     }
