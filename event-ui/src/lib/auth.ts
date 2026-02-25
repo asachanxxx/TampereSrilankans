@@ -47,3 +47,17 @@ export async function requireAdmin(): Promise<AppUser> {
 
   return user;
 }
+
+/**
+ * Require organizer role or higher (organizer / moderator / admin)
+ */
+export async function requireOrganizer(): Promise<AppUser> {
+  const user = await requireAuth();
+
+  const allowed = ['organizer', 'moderator', 'admin'];
+  if (!allowed.includes(user.role)) {
+    throw new Error('Organizer access required');
+  }
+
+  return user;
+}

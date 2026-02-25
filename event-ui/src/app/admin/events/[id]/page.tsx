@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventDetailHeader } from "@/components/events/EventDetailHeader";
 import { EventMetaRow } from "@/components/events/EventMetaRow";
 import { AdminEventSummaryCards } from "@/components/admin/AdminEventSummaryCards";
-import { EmptyState } from "@/components/events/EmptyState";
+import { AdminEventAttendeesTab } from "@/components/admin/AdminEventAttendeesTab";
+import { AdminEventTicketsTab } from "@/components/admin/AdminEventTicketsTab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -191,7 +192,7 @@ export default function AdminEventDetailPage({ params }: { params: { id: string 
         </CardContent>
       </Card>
 
-      <AdminEventSummaryCards />
+      <AdminEventSummaryCards eventId={params.id} />
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
@@ -223,17 +224,11 @@ export default function AdminEventDetailPage({ params }: { params: { id: string 
         </TabsContent>
 
         <TabsContent value="attendees" className="mt-6">
-          <EmptyState
-            title="No attendees data"
-            description="Attendee management coming soon"
-          />
+          <AdminEventAttendeesTab eventId={params.id} />
         </TabsContent>
 
         <TabsContent value="tickets" className="mt-6">
-          <EmptyState
-            title="No tickets data"
-            description="Ticket management coming soon"
-          />
+          <AdminEventTicketsTab eventId={params.id} />
         </TabsContent>
       </Tabs>
     </div>
