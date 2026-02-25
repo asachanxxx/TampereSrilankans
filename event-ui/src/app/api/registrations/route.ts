@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@backend/lib/supabase/server';
+import { createClient, createAdminClient } from '@backend/lib/supabase/server';
 import { RegistrationService } from '@backend/services/RegistrationService';
 import { getCurrentUser, requireAuth } from '../../../lib/auth';
-import { sendTicketEmail } from '../../../lib/emailService';
 
 /**
  * POST /api/registrations
@@ -52,18 +51,14 @@ export async function POST(request: NextRequest) {
 
     // ── Guest path ──────────────────────────────────────────────────────────
     if (guest) {
-      const { registration, ticket } = await registrationService.registerGuest(eventId, formData);
+      // Use service role client to bypass RLS for anonymous registration
+      const adminSupabase = createAdminClient();
+      const guestRegistrationService = new RegistrationService(adminSupabase);
+      const { registration, ticket } = await guestRegistrationService.registerGuest(eventId, formData);
 
-      // Fetch event title for the email
-      const { data: eventRow } = await supabase
-        .from('events')
-        .select('title')
-        .eq('id', eventId)
-        .single();
-
-      // Send ticket link email (non-blocking — log error but don't fail the response)
-      sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
-        .catch((err) => console.error('Failed to send ticket email:', err));
+      // Email sending disabled — ticket is shown in UI modal instead
+      // sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
+      //   .catch((err) => console.error('Failed to send ticket email:', err));
 
       return NextResponse.json(
         {

@@ -13,7 +13,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Ticket } from "lucide-react";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData } from "@/models/registration";
 import type { Event } from "@/models/event";
@@ -45,7 +52,8 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [ticketNumber, setTicketNumber] = useState("");
+  const [showTicketModal, setShowTicketModal] = useState(false);
 
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
@@ -119,7 +127,10 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         throw new Error(json.error || "Registration failed");
       }
 
-      setSubmittedEmail(formData.email);
+      if (json.ticketNumber) {
+        setTicketNumber(json.ticketNumber);
+        setShowTicketModal(true);
+      }
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -129,33 +140,78 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   };
 
   if (success) {
+    const ticketUrl = ticketNumber ? `/tickets/${ticketNumber}` : null;
+
     return (
       <PublicLayout>
+        {/* Ticket details modal */}
+        <Dialog open={showTicketModal} onOpenChange={setShowTicketModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                Registration Successful!
+              </DialogTitle>
+              <DialogDescription>
+                Your registration for <strong>{event!.title}</strong> is confirmed.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-2">
+              {ticketNumber && (
+                <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Ticket className="h-4 w-4" />
+                    Your Ticket
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Ticket Number</p>
+                    <p className="font-mono text-sm font-semibold tracking-wide">{ticketNumber}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Issued To</p>
+                    <p className="text-sm">{formData.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{formData.email}</p>
+                  </div>
+                  {ticketUrl && (
+                    <Button asChild className="w-full" size="sm">
+                      <Link href={ticketUrl} target="_blank">Open Ticket Page</Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                {!isGuest && (
+                  <Button asChild size="sm" className="flex-1">
+                    <Link href={`/me/events/${event!.id}`}>My Events</Link>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Link href={`/events/${params.id}`}>Back to Event</Link>
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="container mx-auto max-w-xl px-4 py-16 text-center space-y-6">
           <div className="flex justify-center">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
           </div>
           <h1 className="text-2xl font-bold">You&apos;re registered!</h1>
-          {isGuest ? (
-            <>
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <p>
-                  Your ticket link has been sent to <strong className="text-foreground">{submittedEmail}</strong>.
-                  Check your inbox (and spam folder) to access your ticket.
-                </p>
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground">
-              Your registration for <span className="font-medium text-foreground">{event.title}</span> was
-              successful. A ticket has been generated and is available in My Events.
-            </p>
-          )}
+          <p className="text-muted-foreground">
+            Your registration for <span className="font-medium text-foreground">{event!.title}</span> was successful.
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {!isGuest && (
+            {ticketUrl && (
               <Button asChild>
-                <Link href={`/me/events/${event.id}`}>View My Ticket</Link>
+                <Link href={ticketUrl}>View My Ticket</Link>
+              </Button>
+            )}
+            {!isGuest && (
+              <Button variant="outline" asChild>
+                <Link href={`/me/events/${event!.id}`}>My Events</Link>
               </Button>
             )}
             <Button variant="outline" asChild>
@@ -209,9 +265,9 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
 
               {isGuest && (
                 <Alert>
-                  <Mail className="h-4 w-4" />
+                  <Ticket className="h-4 w-4" />
                   <AlertDescription>
-                    Your ticket link will be emailed to you after registration. No account required.
+                    Your ticket will be displayed on screen after registration. No account required.
                   </AlertDescription>
                 </Alert>
               )}
