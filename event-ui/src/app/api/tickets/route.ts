@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@backend/lib/supabase/server';
+import { createClient, createAdminClient } from '@backend/lib/supabase/server';
 import { TicketService } from '@backend/services/TicketService';
 import { getCurrentUser, requireAuth } from '../../../lib/auth';
 
@@ -23,14 +23,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result, { status: 200 });
     }
 
-    // Public ticket lookup by number — includes event title for the public ticket page
+    // Public ticket lookup by number — uses service role to bypass RLS for guest tickets
     if (ticketNumber) {
-      const ticket = await ticketService.getTicketByNumber(ticketNumber);
+      const adminSupabase = createAdminClient();
+      const publicTicketService = new TicketService(adminSupabase);
+      const ticket = await publicTicketService.getTicketByNumber(ticketNumber);
       if (!ticket) {
         return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
       }
-      // Fetch event title to display on the ticket page
-      const { data: eventRow } = await supabase
+      // Fetch event details to display on the ticket page
+      const { data: eventRow } = await adminSupabase
         .from('events')
         .select('title, event_date, location_name, city')
         .eq('id', ticket.eventId)
