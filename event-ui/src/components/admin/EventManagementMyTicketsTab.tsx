@@ -13,9 +13,10 @@ import {
   TicketX,
   Send,
   CheckCircle,
+  Ticket as TicketIcon,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
-import { type Ticket as TicketModel, deriveTicketStage } from "@/models/ticket";
+import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
 import ticketStatuses from "@/config/ticket-statuses.json";
 import { PaymentMessageDialog } from "./PaymentMessageDialog";
 
@@ -32,11 +33,21 @@ const stageStyle: Record<string, string> = {
   boarded: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
+const STAGE_FILTERS: { id: TicketStage | "all" | "needs_action"; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "needs_action", label: "Needs Action" },
+  { id: "assigned", label: "Assigned" },
+  { id: "payment_sent", label: "Payment Sent" },
+  { id: "paid", label: "Paid" },
+  { id: "boarded", label: "Boarded" },
+];
+
 export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
   const [tickets, setTickets] = useState<TicketModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<TicketStage | "all" | "needs_action">("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
@@ -56,16 +67,33 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
       .finally(() => setLoading(false));
   }, [eventId, currentUserId]);
 
+  const stats = useMemo(() => ({
+    total: tickets.length,
+    assigned: tickets.filter(t => deriveTicketStage(t) === "assigned").length,
+    payment_sent: tickets.filter(t => deriveTicketStage(t) === "payment_sent").length,
+    paid: tickets.filter(t => deriveTicketStage(t) === "paid").length,
+    boarded: tickets.filter(t => deriveTicketStage(t) === "boarded").length,
+  }), [tickets]);
+
+  const needsAction = stats.assigned + stats.payment_sent;
+  const done = stats.paid + stats.boarded;
+  const progressPct = stats.total > 0 ? Math.round((done / stats.total) * 100) : 0;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return tickets;
-    return tickets.filter(
-      (t) =>
+    return tickets.filter((t) => {
+      const stage = deriveTicketStage(t);
+      const matchesSearch =
+        !q ||
         t.ticketNumber.toLowerCase().includes(q) ||
         t.issuedToName.toLowerCase().includes(q) ||
-        t.issuedToEmail.toLowerCase().includes(q)
-    );
-  }, [tickets, search]);
+        t.issuedToEmail.toLowerCase().includes(q);
+      const matchesStage =
+        stageFilter === "all" ||
+        (stageFilter === "needs_action" ? stage === "assigned" || stage === "payment_sent" : stage === stageFilter);
+      return matchesSearch && matchesStage;
+    });
+  }, [tickets, search, stageFilter]);
 
   const handlePaymentSent = async (ticketId: string) => {
     setActionLoading(ticketId);
@@ -114,15 +142,81 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Count summary */}
-      <p className="text-sm text-muted-foreground">
-        {tickets.length === 0
-          ? "No tickets assigned to you for this event."
-          : `${tickets.length} ticket${tickets.length !== 1 ? "s" : ""} assigned to you`}
-      </p>
-
-      {/* Search */}
+      {/* Stats row */}
       {tickets.length > 0 && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Total</p>
+            </div>
+            <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 p-3 text-center">
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.assigned}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Assigned</p>
+            </div>
+            <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 p-3 text-center">
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.payment_sent}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Payment Sent</p>
+            </div>
+            <div className="rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 p-3 text-center">
+              <p className="text-2xl font-bold text-green-700 dark:text-green-300">{done}</p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Paid / Boarded</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{needsAction > 0 ? `${needsAction} need action` : "All actioned"}</span>
+              <span>{progressPct}% complete</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-green-500 transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stage filter pills */}
+      {tickets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {STAGE_FILTERS.map(({ id, label }) => {
+            const count =
+              id === "all" ? stats.total :
+              id === "needs_action" ? needsAction :
+              id === "assigned" ? stats.assigned :
+              id === "payment_sent" ? stats.payment_sent :
+              id === "paid" ? stats.paid :
+              id === "boarded" ? stats.boarded : 0;
+            const isActive = stageFilter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setStageFilter(id)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                  isActive
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                }`}
+              >
+                {label}
+                <span className="ml-1.5 opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {tickets.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+          <TicketIcon className="h-8 w-8 opacity-30" />
+          <p className="text-sm">No tickets assigned to you for this event.</p>
+        </div>
+      ) : (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -134,10 +228,10 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
         </div>
       )}
 
-      {filtered.length === 0 && search ? (
+      {filtered.length === 0 && (search || stageFilter !== "all") ? (
         <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
           <TicketX className="h-8 w-8 opacity-30" />
-          <p className="text-sm">No matches found</p>
+          <p className="text-sm">No tickets match the current filter</p>
         </div>
       ) : (
         <div className="space-y-3">

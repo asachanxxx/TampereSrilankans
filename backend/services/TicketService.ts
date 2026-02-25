@@ -182,9 +182,10 @@ export class TicketService {
     if (!ticket.assignedToId) {
       throw new Error('Ticket must be assigned to a staff member before payment details can be sent');
     }
-    if (ticket.paymentStatus !== null) {
-      throw new Error(`Payment details have already been ${ticket.paymentStatus === 'paid' ? 'confirmed as paid' : 'sent'}`);
+    if (ticket.paymentStatus === 'paid') {
+      throw new Error('Payment has already been confirmed as paid — cannot resend details');
     }
+    // paymentStatus === 'payment_sent' → allow resend (regenerate message, update timestamp)
 
     // Fetch event payment instructions
     const { data: eventRow, error: eventError } = await this.supabase
