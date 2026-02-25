@@ -152,6 +152,49 @@ export class TicketRepository {
   }
 
   /**
+   * Admin-only direct update of any ticket fields (no lifecycle order checks).
+   * Used by admin to correct data or override status.
+   */
+  async adminUpdateTicket(
+    ticketId: string,
+    fields: {
+      issuedToName?: string;
+      issuedToEmail?: string;
+      assignedToId?: string | null;
+      assignedAt?: string | null;
+      paymentStatus?: 'payment_sent' | 'paid' | null;
+      paymentSentAt?: string | null;
+      paidAt?: string | null;
+      boardingStatus?: 'boarded' | null;
+      boardedAt?: string | null;
+      boardedById?: string | null;
+    }
+  ): Promise<Ticket> {
+    const dbUpdates: any = {};
+    if (fields.issuedToName !== undefined)  dbUpdates.issued_to_name = fields.issuedToName;
+    if (fields.issuedToEmail !== undefined) dbUpdates.issued_to_email = fields.issuedToEmail;
+    if ('assignedToId' in fields)           dbUpdates.assigned_to_id = fields.assignedToId;
+    if ('assignedAt' in fields)             dbUpdates.assigned_at = fields.assignedAt;
+    if ('paymentStatus' in fields)          dbUpdates.payment_status = fields.paymentStatus;
+    if ('paymentSentAt' in fields)          dbUpdates.payment_sent_at = fields.paymentSentAt;
+    if ('paidAt' in fields)                 dbUpdates.paid_at = fields.paidAt;
+    if ('boardingStatus' in fields)         dbUpdates.boarding_status = fields.boardingStatus;
+    if ('boardedAt' in fields)              dbUpdates.boarded_at = fields.boardedAt;
+    if ('boardedById' in fields)            dbUpdates.boarded_by_id = fields.boardedById;
+
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update(dbUpdates)
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Ticket not found');
+    return this.mapToTicket(data);
+  }
+
+  /**
    * Delete a ticket
    */
   async deleteTicket(ticketId: string): Promise<void> {

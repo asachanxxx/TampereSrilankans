@@ -113,6 +113,22 @@ export class ProfileRepository {
   /**
    * Delete a profile
    */
+  /**
+   * Get all staff profiles (organizer, moderator, admin).
+   * Used to populate assignment dropdowns.
+   */
+  async getStaffProfiles(): Promise<AppUser[]> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .in('role', ['organizer', 'moderator', 'admin'])
+      .order('role')
+      .order('display_name');
+
+    if (error) throw error;
+    return (data || []).map((row) => this.mapToAppUser(row));
+  }
+
   async deleteProfile(userId: string): Promise<void> {
     const { error } = await this.supabase
       .from('profiles')

@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, Settings, Menu, ShieldCheck, Users, Lock } from "lucide-react";
+import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,18 +21,32 @@ type AdminLayoutProps = {
   children: ReactNode;
 };
 
+function isOrganizer(role?: string) {
+  return role === "organizer" || role === "moderator" || role === "admin";
+}
+
+const adminNavItems = [
+  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/events", icon: Calendar, label: "Events" },
+  { href: "/admin/event-management", icon: ClipboardList, label: "Event Mgmt" },
+  { href: "/admin/users", icon: Users, label: "Users" },
+  { href: "/admin/permissions", icon: Lock, label: "Permissions" },
+  { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },
+];
+
+const staffNavItems = [
+  { href: "/admin/event-management", icon: ClipboardList, label: "Event Mgmt" },
+];
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
-  const { currentUser } = useSession();
+  const { currentUser, profile } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/admin/events", icon: Calendar, label: "Events" },
-    { href: "/admin/users", icon: Users, label: "Users" },
-    { href: "/admin/permissions", icon: Lock, label: "Permissions" },
-    { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },
-  ];
+  const isAdmin = profile?.role === "admin";
+  const isStaff = isOrganizer(profile?.role);
+  const navItems = isAdmin ? adminNavItems : staffNavItems;
+  const badgeLabel = isAdmin ? "Admin Panel" : "Staff Panel";
 
   const NavContent = () => (
     <nav className="flex flex-col gap-2">
@@ -85,7 +99,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center gap-2">
             <Badge variant="destructive" className="text-xs">
               <ShieldCheck className="h-3 w-3 mr-1" />
-              Admin
+              {isAdmin ? "Admin" : "Staff"}
             </Badge>
             <UserMenuDropdown />
           </div>
@@ -107,7 +121,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="mb-6">
               <Badge variant="destructive" className="text-xs">
                 <ShieldCheck className="h-3 w-3 mr-1" />
-                Admin Panel
+                {badgeLabel}
               </Badge>
             </div>
 

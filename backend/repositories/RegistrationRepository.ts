@@ -166,6 +166,48 @@ export class RegistrationRepository {
   }
 
   /**
+   * Update editable fields on a registration (admin only — no role check here, enforce in service/route)
+   */
+  async updateRegistration(
+    registrationId: string,
+    fields: {
+      fullName?: string;
+      email?: string;
+      whatsappNumber?: string | null;
+      spouseName?: string | null;
+      childrenUnder7Count?: number;
+      childrenOver7Count?: number;
+      childrenNamesAndAges?: string | null;
+      vegetarianMealCount?: number;
+      nonVegetarianMealCount?: number;
+      otherPreferences?: string | null;
+    }
+  ): Promise<Registration> {
+    const dbUpdates: any = {};
+    if (fields.fullName !== undefined)              dbUpdates.full_name = fields.fullName;
+    if (fields.email !== undefined)                 dbUpdates.email = fields.email;
+    if ('whatsappNumber' in fields)                 dbUpdates.whatsapp_number = fields.whatsappNumber ?? null;
+    if ('spouseName' in fields)                     dbUpdates.spouse_name = fields.spouseName ?? null;
+    if (fields.childrenUnder7Count !== undefined)   dbUpdates.children_under_7_count = fields.childrenUnder7Count;
+    if (fields.childrenOver7Count !== undefined)    dbUpdates.children_over_7_count = fields.childrenOver7Count;
+    if ('childrenNamesAndAges' in fields)           dbUpdates.children_names_and_ages = fields.childrenNamesAndAges ?? null;
+    if (fields.vegetarianMealCount !== undefined)   dbUpdates.vegetarian_meal_count = fields.vegetarianMealCount;
+    if (fields.nonVegetarianMealCount !== undefined) dbUpdates.non_vegetarian_meal_count = fields.nonVegetarianMealCount;
+    if ('otherPreferences' in fields)               dbUpdates.other_preferences = fields.otherPreferences ?? null;
+
+    const { data, error } = await this.supabase
+      .from('event_registrations')
+      .update(dbUpdates)
+      .eq('id', registrationId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Registration not found');
+    return this.mapToRegistration(data);
+  }
+
+  /**
    * Get registration by ID
    */
   async getRegistrationById(registrationId: string): Promise<Registration | null> {
