@@ -186,6 +186,23 @@ export function canViewEventTickets(user: AppUser | null, ticketUserId?: string)
 }
 
 /**
+ * Check if user can manage ticket lifecycle
+ * (assign, send payment details, confirm payment).
+ * Organizers, moderators, and admins can manage tickets.
+ */
+export function canManageTickets(user: AppUser | null): boolean {
+  return isOrganizer(user);
+}
+
+/**
+ * Check if user can board tickets (check-in attendees at event entrance).
+ * Organizers, moderators, and admins can board tickets.
+ */
+export function canBoardTickets(user: AppUser | null): boolean {
+  return isOrganizer(user);
+}
+
+/**
  * Check if user can manage user roles
  * Only admins can manage roles
  */
@@ -209,6 +226,16 @@ export class AuthorizationError extends Error {
 export function requireAdmin(user: AppUser | null): void {
   if (!isAdmin(user)) {
     throw new AuthorizationError('Admin access required');
+  }
+}
+
+/**
+ * Require organizer role (or higher), throw error if not met.
+ * Organizer, moderator, and admin all pass this check.
+ */
+export function requireOrganizer(user: AppUser | null): void {
+  if (!isOrganizer(user)) {
+    throw new AuthorizationError('Organizer access required');
   }
 }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "new",
+    "label": "New",
+    "description": "Ticket has been issued but not yet assigned to a staff member.",
+    "color": "gray"
+  },
+  {
+    "id": "assigned",
+    "label": "Assigned",
+    "description": "A staff member has taken ownership of this ticket and will process it.",
+    "color": "blue"
+  },
+  {
+    "id": "payment_sent",
+    "label": "Payment Sent",
+    "description": "Payment details have been sent to the attendee. Awaiting payment.",
+    "color": "yellow"
+  },
+  {
+    "id": "paid",
+    "label": "Paid",
+    "description": "Payment has been confirmed by staff. Ticket is ready for boarding.",
+    "color": "green"
+  },
+  {
+    "id": "boarded",
+    "label": "Boarded",
+    "description": "Attendee has been checked in at the event entrance.",
+    "color": "purple"
+  }
+]

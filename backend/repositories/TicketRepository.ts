@@ -47,6 +47,24 @@ export class TicketRepository {
   }
 
   /**
+   * Get ticket by internal UUID
+   */
+  async getTicketById(ticketId: string): Promise<Ticket | null> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', ticketId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return data ? this.mapToTicket(data) : null;
+  }
+
+  /**
    * Get ticket by ticket number
    */
   async getTicketByNumber(ticketNumber: string): Promise<Ticket | null> {
@@ -146,6 +164,88 @@ export class TicketRepository {
   }
 
   /**
+   * Assign a ticket to a staff member (organizer / moderator / admin).
+   * Returns the updated ticket.
+   */
+  async assignTicket(ticketId: string, assignedToId: string): Promise<Ticket> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({
+        assigned_to_id: assignedToId,
+        assigned_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Ticket not found');
+    return this.mapToTicket(data);
+  }
+
+  /**
+   * Mark payment details as sent to the attendee.
+   * Requires the ticket to already be assigned.
+   * Returns the updated ticket.
+   */
+  async markPaymentSent(ticketId: string): Promise<Ticket> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({
+        payment_status: 'payment_sent',
+        payment_sent_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Ticket not found');
+    return this.mapToTicket(data);
+  }
+
+  /**
+   * Mark ticket as paid (manual confirmation by staff).
+   * Returns the updated ticket.
+   */
+  async markPaid(ticketId: string): Promise<Ticket> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({
+        payment_status: 'paid',
+        paid_at: new Date().toISOString(),
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Ticket not found');
+    return this.mapToTicket(data);
+  }
+
+  /**
+   * Mark ticket as boarded (QR scan or manual check-in at event entrance).
+   * Returns the updated ticket.
+   */
+  async markBoarded(ticketId: string, boardedById: string): Promise<Ticket> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({
+        boarding_status: 'boarded',
+        boarded_at: new Date().toISOString(),
+        boarded_by_id: boardedById,
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Ticket not found');
+    return this.mapToTicket(data);
+  }
+
+  /**
    * Map database row to Ticket model
    */
   private mapToTicket(row: any): Ticket {
@@ -157,6 +257,17 @@ export class TicketRepository {
       issuedAt: row.issued_at,
       issuedToName: row.issued_to_name || '',
       issuedToEmail: row.issued_to_email || '',
+      // Lifecycle: Assignment
+      assignedToId: row.assigned_to_id ?? null,
+      assignedAt: row.assigned_at ?? null,
+      // Lifecycle: Payment
+      paymentStatus: row.payment_status ?? null,
+      paymentSentAt: row.payment_sent_at ?? null,
+      paidAt: row.paid_at ?? null,
+      // Lifecycle: Boarding
+      boardingStatus: row.boarding_status ?? null,
+      boardedAt: row.boarded_at ?? null,
+      boardedById: row.boarded_by_id ?? null,
     };
   }
 }

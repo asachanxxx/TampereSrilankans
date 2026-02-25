@@ -350,3 +350,101 @@ CREATE TRIGGER on_auth_user_created
 -- 3. Set up redirect URLs in OAuth settings
 -- 4. Copy your project URL and API keys to .env.local
 -- =====================================================
+
+
+-- =====================================================
+-- 11. Migration: Ticket Lifecycle & Payment Instructions
+-- =====================================================
+-- Run this block in Supabase SQL Editor to apply the ticket lifecycle
+-- status system (assignment, payment, boarding) and per-event payment
+-- instructions. Safe to run on an existing database.
+
+-- -------------------------------------------------------
+-- 11a. Add payment_instructions to events
+-- -------------------------------------------------------
+-- Stores bank/payment details per event as JSONB so organizers can
+-- configure them in the event settings UI.
+-- Expected shape:
+-- {
+--   "bank_name": "OP Bank",
+--   "iban": "FI12 3456 7890 1234 56",
+--   "account_holder": "Tampere Sri Lankans ry",
+--   "amount_per_person": 15.00,
+--   "currency": "EUR",
+--   "reference_format": "TICKET-{ticket_number}",
+--   "payment_deadline_days": 7,
+--   "notes": "Add your name in the payment message."
+-- }
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS payment_instructions JSONB;
+
+-- -------------------------------------------------------
+-- 11b. Add lifecycle columns to tickets
+-- -------------------------------------------------------
+
+-- Assignment: which staff member owns/processes this ticket
+ALTER TABLE tickets
+  ADD COLUMN IF NOT EXISTS assigned_to_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMPTZ;
+
+-- Payment status: NULL = new/unpaid, 'payment_sent' = details sent to attendee,
+--                 'paid' = payment confirmed by staff
+ALTER TABLE tickets
+  ADD COLUMN IF NOT EXISTS payment_status TEXT
+    CHECK (payment_status IN ('payment_sent', 'paid')),
+  ADD COLUMN IF NOT EXISTS payment_sent_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+
+-- Boarding status: NULL = not yet boarded, 'boarded' = scanned at entrance
+ALTER TABLE tickets
+  ADD COLUMN IF NOT EXISTS boarding_status TEXT
+    CHECK (boarding_status IN ('boarded')),
+  ADD COLUMN IF NOT EXISTS boarded_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS boarded_by_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- -------------------------------------------------------
+-- 11c. RLS: allow staff (organizer/moderator/admin) to UPDATE tickets
+-- -------------------------------------------------------
+
+-- Staff can update ticket lifecycle columns
+CREATE POLICY "Staff can update ticket lifecycle"
+  ON tickets FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid()
+        AND role IN ('organizer', 'moderator', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE id = auth.uid()
+        AND role IN ('organizer', 'moderator', 'admin')
+    )
+  );
+
+-- -------------------------------------------------------
+-- 11d. New permissions for ticket management
+-- -------------------------------------------------------
+INSERT INTO permissions (id, category, description) VALUES
+  ('tickets:manage', 'tickets', 'Assign tickets and manage payment lifecycle'),
+  ('tickets:board',  'tickets', 'Mark tickets as boarded at event entrance')
+ON CONFLICT (id) DO NOTHING;
+
+-- Grant to organizer, moderator, admin
+INSERT INTO role_permissions (role, permission_id) VALUES
+  ('organizer', 'tickets:manage'),
+  ('organizer', 'tickets:board'),
+  ('moderator', 'tickets:manage'),
+  ('moderator', 'tickets:board'),
+  ('admin',     'tickets:manage'),
+  ('admin',     'tickets:board')
+ON CONFLICT DO NOTHING;
+
+-- -------------------------------------------------------
+-- 11e. Indexes for new columns
+-- -------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to    ON tickets(assigned_to_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_payment_status ON tickets(payment_status);
+CREATE INDEX IF NOT EXISTS idx_tickets_boarding_status ON tickets(boarding_status);

@@ -39,4 +39,38 @@ export type Event = {
 
   organizerName: string;
   createdAt?: string; // ISO datetime - when event was created
+
+  // -------------------------------------------------------
+  // Payment instructions (configured per event by organizer/admin)
+  // -------------------------------------------------------
+  paymentInstructions?: EventPaymentInstructions | null;
+};
+
+/**
+ * Per-event payment configuration stored as JSONB in the events table.
+ * Staff uses this template to generate the payment message sent to attendees.
+ */
+export type EventPaymentInstructions = {
+  /** Bank name, e.g. "OP Bank" */
+  bankName: string;
+  /** IBAN, e.g. "FI12 3456 7890 1234 56" */
+  iban: string;
+  /** Account holder name, e.g. "Tampere Sri Lankans ry" */
+  accountHolder: string;
+  /** Price per person in the event currency */
+  amountPerPerson: number;
+  /** ISO 4217 currency code, e.g. "EUR" */
+  currency: string;
+  /**
+   * Reference number format string.
+   * Use {ticket_number} as a placeholder, e.g. "TICKET-{ticket_number}".
+   */
+  referenceFormat: string;
+  /**
+   * Number of days from today the attendee has to complete payment.
+   * Used to compute the payment deadline shown in the message.
+   */
+  paymentDeadlineDays: number;
+  /** Additional free-text note included at the bottom of the payment message */
+  notes?: string;
 };
