@@ -1,0 +1,62 @@
+# ============================================================
+# Dockerfile.production — Railway / production deployment
+# ============================================================
+# Multi-stage build:
+#   1. deps    — install node_modules
+#   2. builder — compile Next.js (NEXT_PUBLIC_ vars baked in here)
+#   3. runner  — minimal ~200 MB runtime image
+#
+# Railway usage:
+#   Set this path in Railway dashboard:
+#   Settings → Build → Dockerfile Path → deploy/Dockerfile.production
+# ============================================================
+
+# ── Stage 1: Install dependencies ──────────────────────────
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+COPY backend ./backend
+COPY event-ui/package*.json ./event-ui/
+
+WORKDIR /app/event-ui
+RUN npm ci
+
+# ── Stage 2: Build ─────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY backend ./backend
+COPY --from=deps /app/event-ui/node_modules ./event-ui/node_modules
+COPY event-ui ./event-ui
+
+# NEXT_PUBLIC_* variables are baked into the JS bundle at build time.
+# Railway injects these from the service's environment variable settings.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_APP_URL
+
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
+WORKDIR /app/event-ui
+RUN npm run build
+
+# ── Stage 3: Runtime ───────────────────────────────────────
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# next.config.js output:'standalone' produces a self-contained server.js.
+# @backend imports are resolved by webpack at build time — no backend/ copy needed.
+COPY --from=builder /app/event-ui/.next/standalone ./
+COPY --from=builder /app/event-ui/.next/static ./.next/static
+COPY --from=builder /app/event-ui/public ./public
+
+EXPOSE 3000
+CMD ["node", "server.js"]

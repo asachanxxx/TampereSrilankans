@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supabase Production Setup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8fafc; color: #1e293b; line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #64748b; margin-bottom: 2.5rem; }
+    .step {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .step-header {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .step-num {
+      background: #0f172a; color: #fff; border-radius: 50%;
+      width: 2rem; height: 2rem; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .step-title { font-size: 1.05rem; font-weight: 600; }
+    p { margin-bottom: 0.75rem; color: #334155; }
+    ul, ol { padding-left: 1.4rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.35rem; color: #334155; }
+    code {
+      background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: 0.15rem 0.45rem; font-family: 'Courier New', monospace;
+      font-size: 0.875rem; color: #0f172a;
+    }
+    pre {
+      background: #0f172a; color: #e2e8f0; border-radius: 8px;
+      padding: 1rem 1.25rem; overflow-x: auto; margin: 0.75rem 0;
+      font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.7;
+    }
+    .tag {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;
+    }
+    .tag-required { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .tag-once     { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .note {
+      background: #eff6ff; border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0;
+      font-size: 0.9rem; color: #1e40af;
+    }
+    .warn {
+      background: #fffbeb; border-left: 4px solid #f59e0b;
+      border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0;
+      font-size: 0.9rem; color: #92400e;
+    }
+    .env-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; }
+    .env-table th {
+      background: #f8fafc; text-align: left; padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0; font-weight: 600;
+    }
+    .env-table td { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; }
+    .env-table tr:nth-child(even) td { background: #f8fafc; }
+    .where { color: #64748b; font-size: 0.8rem; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .checklist li { list-style: none; padding-left: 0; }
+    .checklist li::before { content: '☐ '; font-size: 1rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Supabase Production Setup</h1>
+  <p class="subtitle">Create a fresh Supabase project and configure it for production deployment.</p>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Create a new Supabase project <span class="tag tag-once">one-time</span></div>
+    </div>
+    <ol>
+      <li>Go to <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a></li>
+      <li>Click <strong>New project</strong></li>
+      <li>Choose your organisation, pick a name (e.g. <code>tampere-srilankans-prod</code>), set a strong DB password and pick the <strong>closest region</strong> to Finland (Europe West)</li>
+      <li>Wait ~2 minutes for provisioning to finish</li>
+    </ol>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Run the schema SQL <span class="tag tag-required">required</span></div>
+    </div>
+    <p>Open the <strong>SQL Editor</strong> in your new project:</p>
+    <pre>https://supabase.com/dashboard/project/&lt;YOUR_PROJECT_REF&gt;/sql</pre>
+    <ol>
+      <li>Click <strong>New query</strong></li>
+      <li>Open the file <code>deploy/sql/01-schema.sql</code> from this repo</li>
+      <li>Paste the entire contents into the editor</li>
+      <li>Click <strong>Run</strong> — you should see <em>"Success. No rows returned."</em></li>
+    </ol>
+    <div class="note">
+      This creates all tables, RLS policies, indexes, the auto-profile trigger, and seeds the permissions/role data in one shot.
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Configure Authentication <span class="tag tag-required">required</span></div>
+    </div>
+    <p>In your Supabase dashboard → <strong>Authentication → Providers</strong>:</p>
+    <ul>
+      <li>Enable <strong>Email</strong> provider (on by default)</li>
+      <li>Enable <strong>Google</strong> and/or <strong>Facebook</strong> OAuth if needed (requires Google Cloud / Facebook App credentials)</li>
+    </ul>
+    <p>Then go to <strong>Authentication → URL Configuration</strong>:</p>
+    <table class="env-table">
+      <tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Site URL</td><td>Your Railway app URL, e.g. <code>https://your-app.up.railway.app</code></td></tr>
+      <tr><td>Redirect URLs</td><td><code>https://your-app.up.railway.app/auth/callback</code></td></tr>
+    </table>
+    <div class="note">You can set a placeholder URL now and update it after Railway deployment gives you the final URL.</div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Copy your API keys <span class="tag tag-required">required</span></div>
+    </div>
+    <p>Go to <strong>Project Settings → API</strong>:</p>
+    <table class="env-table">
+      <tr><th>Key</th><th>Where to find it</th></tr>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>Project URL field</td></tr>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>anon / public key</td></tr>
+      <tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>service_role key <strong>(keep secret)</strong></td></tr>
+    </table>
+    <div class="warn">
+      Never commit the service_role key to Git. It bypasses all RLS policies.
+    </div>
+    <p>Keep these ready — you will enter them as environment variables in Railway (next guide).</p>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">Create your first admin user <span class="tag tag-once">after first login</span></div>
+    </div>
+    <p>After the app is deployed and you sign up for the first time:</p>
+    <ol>
+      <li>Open the SQL Editor again</li>
+      <li>Run the contents of <code>deploy/sql/02-set-admin.sql</code></li>
+      <li>Replace <code>YOUR_EMAIL_HERE</code> with your email to find your user UUID</li>
+      <li>Replace <code>PASTE-YOUR-USER-UUID-HERE</code> with that UUID and run the UPDATE</li>
+    </ol>
+    <div class="note">
+      Alternatively, use the ADMIN_EMAILS environment variable — any email in that list gets auto-promoted to admin on first login.
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div class="step-title">Full list of environment variables</div>
+    </div>
+    <p>These are all variables you need to set in Railway (see <code>2-railway-setup.html</code>):</p>
+    <table class="env-table">
+      <tr><th>Variable</th><th>Value</th><th>Notes</th></tr>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>From project settings</td><td>Public — baked at build time</td></tr>
+      <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>From project settings</td><td>Public — baked at build time</td></tr>
+      <tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>From project settings</td><td>Secret — server only</td></tr>
+      <tr><td><code>NEXT_PUBLIC_SITE_URL</code></td><td>Railway app URL</td><td>e.g. https://your-app.up.railway.app</td></tr>
+      <tr><td><code>NEXT_PUBLIC_APP_URL</code></td><td>Railway app URL</td><td>Same as above</td></tr>
+      <tr><td><code>ADMIN_EMAILS</code></td><td>your@email.com</td><td>Comma-separated, auto-assigned admin</td></tr>
+      <tr><td><code>GMAIL_USER</code></td><td>yourorg@gmail.com</td><td>For sending ticket emails</td></tr>
+      <tr><td><code>GMAIL_APP_PASSWORD</code></td><td>xxxx xxxx xxxx xxxx</td><td>Gmail App Password (not login password)</td></tr>
+    </table>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">✓</div>
+      <div class="step-title">Checklist</div>
+    </div>
+    <ul class="checklist">
+      <li>New Supabase project created</li>
+      <li>01-schema.sql executed successfully</li>
+      <li>Email auth enabled</li>
+      <li>Redirect URL set in Supabase Auth settings</li>
+      <li>API keys copied and ready</li>
+    </ul>
+    <p style="margin-top:0.75rem">→ Continue to <strong>2-railway-setup.html</strong></p>
+  </div>
+
+</div>
+</body>
+</html>

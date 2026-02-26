@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Railway Deployment Setup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8fafc; color: #1e293b; line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #64748b; margin-bottom: 2.5rem; }
+    .step {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .step-header {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .step-num {
+      background: #0f172a; color: #fff; border-radius: 50%;
+      width: 2rem; height: 2rem; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .step-title { font-size: 1.05rem; font-weight: 600; }
+    p { margin-bottom: 0.75rem; color: #334155; }
+    ul, ol { padding-left: 1.4rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.35rem; color: #334155; }
+    code {
+      background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: 0.15rem 0.45rem; font-family: 'Courier New', monospace;
+      font-size: 0.875rem; color: #0f172a;
+    }
+    pre {
+      background: #0f172a; color: #e2e8f0; border-radius: 8px;
+      padding: 1rem 1.25rem; overflow-x: auto; margin: 0.75rem 0;
+      font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.7;
+    }
+    .tag {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;
+    }
+    .tag-required { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .tag-once     { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .note {
+      background: #eff6ff; border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0;
+      font-size: 0.9rem; color: #1e40af;
+    }
+    .warn {
+      background: #fffbeb; border-left: 4px solid #f59e0b;
+      border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0;
+      font-size: 0.9rem; color: #92400e;
+    }
+    .success {
+      background: #f0fdf4; border-left: 4px solid #22c55e;
+      border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin: 0.75rem 0;
+      font-size: 0.9rem; color: #166534;
+    }
+    .env-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; }
+    .env-table th {
+      background: #f8fafc; text-align: left; padding: 0.5rem 0.75rem;
+      border: 1px solid #e2e8f0; font-weight: 600;
+    }
+    .env-table td { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; vertical-align: top; }
+    .env-table tr:nth-child(even) td { background: #f8fafc; }
+    .secret { color: #dc2626; font-weight: 600; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .checklist li { list-style: none; padding-left: 0; }
+    .checklist li::before { content: '☐ '; font-size: 1rem; }
+    .img-label {
+      background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 0.4rem 0.75rem; font-size: 0.8rem; color: #475569;
+      display: inline-block; margin: 0.25rem 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Railway Deployment — Docker</h1>
+  <p class="subtitle">Deploy the Next.js app to Railway using the production Dockerfile. Complete <strong>1-supabase-setup.html</strong> first and have your API keys ready.</p>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Push the repo to GitHub <span class="tag tag-required">required</span></div>
+    </div>
+    <p>Railway deploys from a GitHub repository. If the repo is not on GitHub yet:</p>
+    <pre>cd C:\Developments\EventHandler\Git\TampereSrilankans
+git init                          # (skip if already a git repo)
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git push -u origin main</pre>
+    <div class="warn">
+      Make sure <code>event-ui/.env.local</code> is in <code>.gitignore</code> — never push real API keys to GitHub.
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Create a Railway project <span class="tag tag-once">one-time</span></div>
+    </div>
+    <ol>
+      <li>Go to <a href="https://railway.app" target="_blank">railway.app</a> and sign in</li>
+      <li>Click <strong>New Project</strong></li>
+      <li>Choose <strong>Deploy from GitHub repo</strong></li>
+      <li>Connect your GitHub account if prompted, then select your repository</li>
+      <li>Railway will detect the Dockerfile automatically — click <strong>Deploy</strong> to create the project (it will fail initially — that is expected, continue to step 3)</li>
+    </ol>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Point Railway to the production Dockerfile <span class="tag tag-required">required</span></div>
+    </div>
+    <p>The root <code>Dockerfile</code> is a dev image. Tell Railway to use the production one instead.</p>
+    <ol>
+      <li>In your Railway project, click on the service</li>
+      <li>Go to <strong>Settings → Build</strong></li>
+      <li>Find <strong>Dockerfile Path</strong> and set it to:</li>
+    </ol>
+    <pre>deploy/Dockerfile.production</pre>
+    <div class="note">
+      The production Dockerfile uses a multi-stage build (<code>npm run build</code> + standalone output), resulting in a ~200 MB image instead of running the dev server.
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Set environment variables <span class="tag tag-required">required</span></div>
+    </div>
+    <p>Go to your service → <strong>Variables</strong> tab. Add every row below:</p>
+    <table class="env-table">
+      <tr>
+        <th>Variable</th>
+        <th>Value</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+        <td>From Supabase → Project Settings → API</td>
+        <td>e.g. <code>https://xxxx.supabase.co</code></td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+        <td>anon / public key from Supabase</td>
+        <td>Safe to expose</td>
+      </tr>
+      <tr>
+        <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+        <td>service_role key from Supabase</td>
+        <td class="secret">⚠ Secret — server only</td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_SITE_URL</code></td>
+        <td>Your Railway URL (set after step 6)</td>
+        <td>e.g. <code>https://your-app.up.railway.app</code></td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_APP_URL</code></td>
+        <td>Same as SITE_URL</td>
+        <td>Used for ticket links in emails</td>
+      </tr>
+      <tr>
+        <td><code>ADMIN_EMAILS</code></td>
+        <td>your@email.com</td>
+        <td>Auto-assigned admin on first login</td>
+      </tr>
+      <tr>
+        <td><code>GMAIL_USER</code></td>
+        <td>yourorg@gmail.com</td>
+        <td>For outgoing ticket emails</td>
+      </tr>
+      <tr>
+        <td><code>GMAIL_APP_PASSWORD</code></td>
+        <td>xxxx xxxx xxxx xxxx</td>
+        <td>Generate at myaccount.google.com → Security → App Passwords</td>
+      </tr>
+      <tr>
+        <td><code>NODE_ENV</code></td>
+        <td><code>production</code></td>
+        <td>Set explicitly for clarity</td>
+      </tr>
+      <tr>
+        <td><code>PORT</code></td>
+        <td><code>3000</code></td>
+        <td>Railway reads this automatically</td>
+      </tr>
+    </table>
+    <div class="warn">
+      <strong>NEXT_PUBLIC_* variables are baked into the JavaScript bundle at build time.</strong>
+      If you change them later, you must trigger a new deployment (redeploy) for the change to take effect.
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">Deploy</div>
+    </div>
+    <ol>
+      <li>After adding variables, click <strong>Deploy</strong> (or push a new commit — Railway auto deploys on push)</li>
+      <li>Watch the build log — it will run the 3-stage Docker build (~3–5 minutes first time)</li>
+      <li>When you see <strong>"Deployment successful"</strong>, the app is live</li>
+    </ol>
+    <div class="note">
+      Build logs are under your service → <strong>Deployments → View logs</strong>. If the build fails, the most common cause is a missing environment variable.
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">6</div>
+      <div class="step-title">Get your public URL</div>
+    </div>
+    <ol>
+      <li>Go to your service → <strong>Settings → Networking</strong></li>
+      <li>Click <strong>Generate Domain</strong> — Railway gives you a free <code>*.up.railway.app</code> URL</li>
+      <li>Copy the URL</li>
+    </ol>
+    <p>Now update the following in both Railway (Variables tab) and Supabase (Auth → URL Configuration):</p>
+    <ul>
+      <li><code>NEXT_PUBLIC_SITE_URL</code> → your Railway URL</li>
+      <li><code>NEXT_PUBLIC_APP_URL</code>  → your Railway URL</li>
+      <li>Supabase → <strong>Site URL</strong> → your Railway URL</li>
+      <li>Supabase → <strong>Redirect URLs</strong> → <code>https://your-app.up.railway.app/auth/callback</code></li>
+    </ul>
+    <p>Then redeploy once to bake the updated URLs into the bundle.</p>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">7</div>
+      <div class="step-title">Custom domain (optional)</div>
+    </div>
+    <ol>
+      <li>Go to service → <strong>Settings → Networking → Custom Domain</strong></li>
+      <li>Enter your domain (e.g. <code>tamperesrilankans.fi</code>)</li>
+      <li>Add the CNAME record Railway shows you to your DNS provider</li>
+      <li>Railway provisions an SSL certificate automatically</li>
+      <li>Update <code>NEXT_PUBLIC_SITE_URL</code>, <code>NEXT_PUBLIC_APP_URL</code>, and Supabase redirect URLs to the custom domain, then redeploy</li>
+    </ol>
+  </div>
+
+  <!-- STEP 8 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">8</div>
+      <div class="step-title">Future deployments</div>
+    </div>
+    <p>After initial setup, every push to the <code>main</code> branch automatically triggers a new build and deployment on Railway. No manual steps needed.</p>
+    <pre>git add .
+git commit -m "Your change description"
+git push origin main
+# Railway detects the push and redeploys automatically</pre>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-num">✓</div>
+      <div class="step-title">Checklist</div>
+    </div>
+    <ul class="checklist">
+      <li>Repo pushed to GitHub</li>
+      <li>Railway project created from GitHub repo</li>
+      <li>Dockerfile path set to <code>deploy/Dockerfile.production</code></li>
+      <li>All environment variables added</li>
+      <li>Build succeeded and app is live</li>
+      <li>Railway domain generated and copied</li>
+      <li>NEXT_PUBLIC_SITE_URL / APP_URL updated + redeployed</li>
+      <li>Supabase Site URL and Redirect URL updated</li>
+      <li>First admin user promoted via 02-set-admin.sql (or ADMIN_EMAILS)</li>
+    </ul>
+    <div class="success" style="margin-top:0.75rem">
+      🎉 App is live and fully configured!
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
