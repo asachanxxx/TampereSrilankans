@@ -125,16 +125,12 @@ git push -u origin main</pre>
       <div class="step-num">3</div>
       <div class="step-title">Point Railway to the production Dockerfile <span class="tag tag-required">required</span></div>
     </div>
-    <p>The root <code>Dockerfile</code> is a dev image. Tell Railway to use the production one instead.</p>
-    <ol>
-      <li>In your Railway project, click on the service</li>
-      <li>Go to <strong>Settings → Build</strong></li>
-      <li>Find <strong>Dockerfile Path</strong> and set it to:</li>
-    </ol>
-    <pre>deploy/Dockerfile.production</pre>
+    <p>The root <code>Dockerfile</code> is a dev image. The <code>railway.json</code> file at the repo root already tells Railway to use the production Dockerfile — no manual dashboard change needed.</p>
     <div class="note">
-      The production Dockerfile uses a multi-stage build (<code>npm run build</code> + standalone output), resulting in a ~200 MB image instead of running the dev server.
+      <code>railway.json</code> sets <code>"builder": "DOCKERFILE"</code> and <code>"dockerfilePath": "deploy/Dockerfile.production"</code>. This overrides Railpack auto-detection.
     </div>
+    <p>If you ever need to override it in the dashboard anyway: service → <strong>Settings → Build → Dockerfile Path</strong>:</p>
+    <pre>deploy/Dockerfile.production</pre>
   </div>
 
   <!-- STEP 4 -->
@@ -281,7 +277,7 @@ git push origin main
     <ul class="checklist">
       <li>Repo pushed to GitHub</li>
       <li>Railway project created from GitHub repo</li>
-      <li>Dockerfile path set to <code>deploy/Dockerfile.production</code></li>
+      <li><code>railway.json</code> committed — Docker build auto-configured</li>
       <li>All environment variables added</li>
       <li>Build succeeded and app is live</li>
       <li>Railway domain generated and copied</li>
