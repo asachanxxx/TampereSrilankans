@@ -9,6 +9,7 @@ import { handlePostAuth } from '@/services/profileService';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
   const code = requestUrl.searchParams.get('code');
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
@@ -22,18 +23,25 @@ export async function GET(request: NextRequest) {
     hasError: !!error
   });
 
+  console.log('🌐 SITE URL RESOLUTION:', {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || '⚠️ NOT SET',
+    requestOrigin: requestUrl.origin,
+    resolvedSiteUrl: siteUrl,
+    usingEnvVar: !!process.env.NEXT_PUBLIC_SITE_URL
+  });
+
   // Handle OAuth errors
   if (error) {
     console.error('OAuth error:', error, errorDescription);
     return NextResponse.redirect(
-      `${requestUrl.origin}/auth?error=${encodeURIComponent(errorDescription || error)}`
+      `${siteUrl}/auth?error=${encodeURIComponent(errorDescription || error)}`
     );
   }
 
   // Handle missing code
   if (!code) {
     return NextResponse.redirect(
-      `${requestUrl.origin}/auth?error=No code provided`
+      `${siteUrl}/auth?error=No code provided`
     );
   }
 
@@ -77,7 +85,7 @@ export async function GET(request: NextRequest) {
     if (sessionError || !session?.user) {
       console.error('❌ Session exchange error:', sessionError);
       return NextResponse.redirect(
-        `${requestUrl.origin}/auth?error=${encodeURIComponent(sessionError?.message || 'Failed to establish session')}`
+        `${siteUrl}/auth?error=${encodeURIComponent(sessionError?.message || 'Failed to establish session')}`
       );
     }
 
@@ -100,8 +108,12 @@ export async function GET(request: NextRequest) {
     } else if (profile.role === 'organizer' || profile.role === 'moderator') {
       redirectTo = '/admin/event-management';
     }
-    console.log('🎯 REDIRECTING TO:', redirectTo);
-    return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`);
+    console.log('🎯 FINAL REDIRECT:', {
+      relativePath: redirectTo,
+      fullUrl: `${siteUrl}${redirectTo}`,
+      siteUrl
+    });
+    return NextResponse.redirect(`${siteUrl}${redirectTo}`);
 
   } catch (err) {
     console.error('❌ CALLBACK EXCEPTION:', {
@@ -110,7 +122,7 @@ export async function GET(request: NextRequest) {
       errorStack: err instanceof Error ? err.stack : undefined
     });
     return NextResponse.redirect(
-      `${requestUrl.origin}/auth?error=${encodeURIComponent(err instanceof Error ? err.message : 'Authentication failed')}`
+      `${siteUrl}/auth?error=${encodeURIComponent(err instanceof Error ? err.message : 'Authentication failed')}`
     );
   }
 }
