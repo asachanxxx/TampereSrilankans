@@ -13,7 +13,6 @@ export default function NotAuthorizedPage() {
         <p className="text-muted-foreground mb-6">
           You don't have permission to access this page. 
           This area is restricted to administrators only.
-          Pleaase contact your administrator if you believe this is an error.
         </p>
         <Link href="/">
           <Button>Return Home</Button>
