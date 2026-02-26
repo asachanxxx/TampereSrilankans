@@ -9,6 +9,11 @@ import { getCurrentUser } from '../../../lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
+    console.log('📋 GET /api/events - Supabase config:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL || '⚠️ NOT SET',
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
     const supabase = await createClient();
     const eventService = new EventService(supabase);
     const user = await getCurrentUser();
@@ -37,9 +42,16 @@ export async function GET(request: NextRequest) {
       events = await eventService.listPublicEvents();
     }
 
+    console.log('✅ GET /api/events result:', { count: events?.length ?? 0 });
     return NextResponse.json({ events }, { status: 200 });
   } catch (error: any) {
-    console.error('GET /api/events error:', error);
+    console.error('❌ GET /api/events error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      status: error.status,
+    });
     return NextResponse.json(
       { error: error.message || 'Failed to fetch events' },
       { status: error.message?.includes('authorized') ? 403 : 500 }
