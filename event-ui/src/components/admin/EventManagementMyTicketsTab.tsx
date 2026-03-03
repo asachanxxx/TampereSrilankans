@@ -20,6 +20,7 @@ import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
 import ticketStatuses from "@/config/ticket-statuses.json";
 import { PaymentMessageDialog } from "./PaymentMessageDialog";
+import { TicketViewDialog } from "./TicketViewDialog";
 
 interface Props {
   eventId: string;
@@ -56,6 +57,7 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
     emailSubject: string;
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [viewTarget, setViewTarget] = useState<TicketModel | null>(null);
 
   const handlePreview = async (ticketId: string) => {
     setPreviewLoading(ticketId);
@@ -300,6 +302,15 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       size="sm"
+                      variant="outline"
+                      onClick={() => setViewTarget(ticket)}
+                      className="gap-1.5"
+                    >
+                      <TicketIcon className="h-4 w-4" />
+                      Show Ticket
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="ghost"
                       onClick={() => handlePreview(ticket.id)}
                       disabled={previewLoading === ticket.id}
@@ -370,6 +381,11 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
           onClose={() => setPaymentMessages(null)}
         />
       )}
+
+      <TicketViewDialog
+        ticket={viewTarget}
+        onClose={() => setViewTarget(null)}
+      />
     </div>
   );
 }

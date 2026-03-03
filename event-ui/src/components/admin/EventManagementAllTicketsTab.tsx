@@ -22,6 +22,7 @@ import { TicketAssignDropdown } from "./TicketAssignDropdown";
 import { TicketStatusControl } from "./TicketStatusControl";
 import { TicketEditDialog } from "./TicketEditDialog";
 import { PaymentMessageDialog } from "./PaymentMessageDialog";
+import { TicketViewDialog } from "./TicketViewDialog";
 
 interface Props {
   eventId: string;
@@ -64,6 +65,7 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<TicketStage | "all">("all");
   const [editTarget, setEditTarget] = useState<TicketModel | null>(null);
+  const [viewTarget, setViewTarget] = useState<TicketModel | null>(null);
   const [paymentMessages, setPaymentMessages] = useState<{
     whatsappMessage: string;
     emailMessage: string;
@@ -128,7 +130,7 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
   if (loading) {
     return (
       <div className="space-y-4">
-        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
       </div>
     );
   }
@@ -185,80 +187,88 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
             const stage = deriveTicketStage(ticket);
             return (
               <Card key={ticket.id}>
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3 space-y-2">
                   {/* Header row */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-mono text-xs text-muted-foreground">{ticket.ticketNumber}</p>
-                      <p className="font-medium truncate">{ticket.issuedToName}</p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {ticket.issuedToEmail}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Badge variant="outline" className={`text-xs ${stageStyle[stage]}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex items-center gap-2">
+                      <Badge variant="outline" className={`text-xs shrink-0 ${stageStyle[stage]}`}>
                         {getStageLabel(stage)}
                       </Badge>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{ticket.issuedToName}</p>
+                        <p className="font-mono text-[11px] text-muted-foreground">{ticket.ticketNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground"
+                        className="h-7 w-7 text-muted-foreground"
+                        title="Show ticket"
+                        onClick={() => setViewTarget(ticket)}
+                      >
+                        <Ticket className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground"
                         title="Preview payment message"
                         disabled={previewLoading === ticket.id}
                         onClick={() => handlePreview(ticket.id)}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-7 w-7"
+                        title="Edit ticket"
                         onClick={() => setEditTarget(ticket)}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
 
-                  {/* Assignment row */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-20 shrink-0">Assigned to</span>
-                    <TicketAssignDropdown
-                      ticketId={ticket.id}
-                      currentAssignedId={ticket.assignedToId}
-                      onAssigned={handleTicketUpdate}
-                    />
+                  {/* Email */}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{ticket.issuedToEmail}</span>
                   </div>
 
-                  {/* Status control */}
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Stage</span>
-                    <TicketStatusControl
-                      eventId={eventId}
-                      ticket={ticket}
-                      onUpdated={handleTicketUpdate}
-                    />
+                  {/* Assignment + Stage in one row */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground shrink-0">Assign</span>
+                      <TicketAssignDropdown
+                        ticketId={ticket.id}
+                        currentAssignedId={ticket.assignedToId}
+                        onAssigned={handleTicketUpdate}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground shrink-0">Stage</span>
+                      <TicketStatusControl
+                        eventId={eventId}
+                        ticket={ticket}
+                        onUpdated={handleTicketUpdate}
+                      />
+                    </div>
                   </div>
 
                   {/* Timestamps */}
                   {(ticket.assignedAt || ticket.paymentSentAt || ticket.paidAt || ticket.boardedAt) && (
-                    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 pt-1 border-t">
+                    <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 pt-1 border-t">
                       {ticket.assignedAt && (
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3 w-3" />
                           Assigned {formatDateShort(ticket.assignedAt)}
                         </span>
                       )}
-                      {ticket.paymentSentAt && (
-                        <span>Payment sent {formatDateShort(ticket.paymentSentAt)}</span>
-                      )}
-                      {ticket.paidAt && (
-                        <span>Paid {formatDateShort(ticket.paidAt)}</span>
-                      )}
-                      {ticket.boardedAt && (
-                        <span>Boarded {formatDateShort(ticket.boardedAt)}</span>
-                      )}
+                      {ticket.paymentSentAt && <span>Sent {formatDateShort(ticket.paymentSentAt)}</span>}
+                      {ticket.paidAt && <span>Paid {formatDateShort(ticket.paidAt)}</span>}
+                      {ticket.boardedAt && <span>Boarded {formatDateShort(ticket.boardedAt)}</span>}
                     </div>
                   )}
                 </CardContent>
@@ -280,6 +290,11 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
           }}
         />
       )}
+
+      <TicketViewDialog
+        ticket={viewTarget}
+        onClose={() => setViewTarget(null)}
+      />
 
       {paymentMessages && (
         <PaymentMessageDialog
