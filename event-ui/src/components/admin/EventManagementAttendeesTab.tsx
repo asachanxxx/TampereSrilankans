@@ -53,6 +53,17 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [editTarget, setEditTarget] = useState<Registration | null>(null);
+  const [childrenAgeThreshold, setChildrenAgeThreshold] = useState(7);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((config) => {
+        const threshold = parseInt(config.children_age_threshold);
+        if (!isNaN(threshold)) setChildrenAgeThreshold(threshold);
+      })
+      .catch(() => {/* use default 7 */});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -218,6 +229,7 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
           open={!!editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={handleSaved}
+          childrenAgeThreshold={childrenAgeThreshold}
         />
       )}
     </div>

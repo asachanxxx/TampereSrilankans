@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Registration } from "@/models/registration";
+import { Registration, RegistrationChild } from "@/models/registration";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 
 type Props = {
   eventId: string;
@@ -21,9 +21,10 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSaved: (updated: Registration) => void;
+  childrenAgeThreshold?: number;
 };
 
-export function AttendeeEditDialog({ eventId, registration, open, onClose, onSaved }: Props) {
+export function AttendeeEditDialog({ eventId, registration, open, onClose, onSaved, childrenAgeThreshold = 7 }: Props) {
   const [form, setForm] = useState({
     fullName: registration.fullName,
     email: registration.email,
@@ -36,6 +37,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
     nonVegetarianMealCount: registration.nonVegetarianMealCount,
     otherPreferences: registration.otherPreferences ?? "",
   });
+  const [children, setChildren] = useState<RegistrationChild[]>(registration.children ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
           childrenUnder7Count: Number(form.childrenUnder7Count),
           childrenOver7Count: Number(form.childrenOver7Count),
           childrenNamesAndAges: form.childrenNamesAndAges || undefined,
+          children,
           vegetarianMealCount: Number(form.vegetarianMealCount),
           nonVegetarianMealCount: Number(form.nonVegetarianMealCount),
           otherPreferences: form.otherPreferences || undefined,
@@ -119,7 +122,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-2">
-            <Label className="col-span-1 text-right text-xs">Children &lt;7</Label>
+            <Label className="col-span-1 text-right text-xs">Children &lt;{childrenAgeThreshold}</Label>
             <Input
               className="col-span-3"
               type="number"
@@ -129,7 +132,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-2">
-            <Label className="col-span-1 text-right text-xs">Children 7+</Label>
+            <Label className="col-span-1 text-right text-xs">Children {childrenAgeThreshold}+</Label>
             <Input
               className="col-span-3"
               type="number"
@@ -138,14 +141,57 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
               onChange={(e) => handleChange("childrenOver7Count", Number(e.target.value))}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-2">
-            <Label className="col-span-1 text-right text-xs">Children Names</Label>
-            <Textarea
-              className="col-span-3"
-              rows={3}
-              value={form.childrenNamesAndAges}
-              onChange={(e) => handleChange("childrenNamesAndAges", e.target.value)}
-            />
+          {/* Dynamic children detail rows */}
+          <div className="grid grid-cols-4 gap-2">
+            <Label className="col-span-1 text-right text-xs pt-2">Children Details</Label>
+            <div className="col-span-3 space-y-2">
+              {children.map((child, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <Input
+                    placeholder={`Child ${idx + 1} name`}
+                    value={child.childName}
+                    onChange={(e) => {
+                      const updated = [...children];
+                      updated[idx] = { ...updated[idx], childName: e.target.value };
+                      setChildren(updated);
+                    }}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Age"
+                    min={0}
+                    max={18}
+                    value={child.childAge || ""}
+                    onChange={(e) => {
+                      const updated = [...children];
+                      updated[idx] = { ...updated[idx], childAge: parseInt(e.target.value) || 0 };
+                      setChildren(updated);
+                    }}
+                    className="w-20"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => setChildren(children.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setChildren([...children, { childName: "", childAge: 0 }])}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Child
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-2">
             <Label className="col-span-1 text-right text-xs">Veg Meals</Label>

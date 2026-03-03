@@ -6,6 +6,7 @@ import { EventRepository } from '../repositories/EventRepository';
 import { RegistrationValidator } from '../validators/RegistrationValidator';
 import { requireAuth, canRegisterForEvent, isAdmin } from '../policies/accessControl';
 import { TicketService } from './TicketService';
+import { ChildrenRepository } from '../repositories/ChildrenRepository';
 import { Ticket } from '../../event-ui/src/models/ticket';
 
 /**
@@ -15,11 +16,13 @@ export class RegistrationService {
   private registrationRepo: RegistrationRepository;
   private eventRepo: EventRepository;
   private ticketService: TicketService;
+  private childrenRepo: ChildrenRepository;
 
   constructor(private supabase: SupabaseClient) {
     this.registrationRepo = new RegistrationRepository(supabase);
     this.eventRepo = new EventRepository(supabase);
     this.ticketService = new TicketService(supabase);
+    this.childrenRepo = new ChildrenRepository(supabase);
   }
 
   /**
@@ -69,12 +72,16 @@ export class RegistrationService {
 
     // Generate ticket automatically
     try {
-      await this.ticketService.generateTicket(
+      const ticket = await this.ticketService.generateTicket(
         userId,
         eventId,
         formData.fullName,
         formData.email
       );
+      // Save structured children details
+      if (formData.children && formData.children.length > 0) {
+        await this.childrenRepo.saveChildren(ticket.id, formData.children);
+      }
     } catch (error) {
       // If ticket generation fails, we might want to rollback the registration
       // For now, we'll log the error but keep the registration
@@ -206,6 +213,15 @@ export class RegistrationService {
       formData.fullName,
       formData.email
     );
+
+    // Save structured children details
+    if (formData.children && formData.children.length > 0) {
+      try {
+        await this.childrenRepo.saveChildren(ticket.id, formData.children);
+      } catch (error) {
+        console.error('Failed to save children details:', error);
+      }
+    }
 
     return { registration, ticket };
   }

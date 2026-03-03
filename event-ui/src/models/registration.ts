@@ -1,4 +1,15 @@
 /**
+ * A single child entry attached to a registration via its ticket.
+ * Maps to registration_children table.
+ */
+export type RegistrationChild = {
+  id?: string;
+  ticketId?: string;
+  childName: string;
+  childAge: number;
+};
+
+/**
  * Registration model - represents a user's registration for an event
  * Maps to event_registrations table
  */
@@ -13,7 +24,8 @@ export type Registration = {
   spouseName?: string;
   childrenUnder7Count: number;
   childrenOver7Count: number;
-  childrenNamesAndAges?: string;
+  childrenNamesAndAges?: string; // legacy free-text field, kept for backward compat
+  children?: RegistrationChild[];
   vegetarianMealCount: number;
   nonVegetarianMealCount: number;
   otherPreferences?: string;
@@ -27,7 +39,8 @@ export type RegistrationFormData = {
   spouseName?: string;
   childrenUnder7Count?: number;
   childrenOver7Count?: number;
-  childrenNamesAndAges?: string;
+  childrenNamesAndAges?: string; // legacy, no longer populated by new UI
+  children?: RegistrationChild[];
   vegetarianMealCount?: number;
   nonVegetarianMealCount?: number;
   otherPreferences?: string;

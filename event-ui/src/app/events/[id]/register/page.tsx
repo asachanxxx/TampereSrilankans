@@ -20,9 +20,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Ticket } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle } from "lucide-react";
 import { useSession } from "@/state/session";
-import type { RegistrationFormData } from "@/models/registration";
+import type { RegistrationFormData, RegistrationChild } from "@/models/registration";
 import type { Event } from "@/models/event";
 
 export default function EventRegisterPage({ params }: { params: { id: string } }) {
@@ -34,6 +34,8 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   const [event, setEvent] = useState<Event | null>(null);
   const [eventLoading, setEventLoading] = useState(true);
   const [eventNotFound, setEventNotFound] = useState(false);
+  const [childrenAgeThreshold, setChildrenAgeThreshold] = useState(7);
+  const [ticketBaseUrl, setTicketBaseUrl] = useState("");
 
   const [formData, setFormData] = useState<RegistrationFormData>({
     fullName: currentUser?.displayName || "",
@@ -42,7 +44,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
     spouseName: "",
     childrenUnder7Count: 0,
     childrenOver7Count: 0,
-    childrenNamesAndAges: "",
+    children: [],
     vegetarianMealCount: 0,
     nonVegetarianMealCount: 0,
     otherPreferences: "",
@@ -65,6 +67,17 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
       .catch(() => setEventNotFound(true))
       .finally(() => setEventLoading(false));
   }, [params.id]);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((config) => {
+        const threshold = parseInt(config.children_age_threshold);
+        if (!isNaN(threshold)) setChildrenAgeThreshold(threshold);
+        if (config.ticket_base_url) setTicketBaseUrl(config.ticket_base_url);
+      })
+      .catch(() => {/* use default 7 */});
+  }, []);
 
   // Keep form in sync when user profile loads
   useEffect(() => {
@@ -242,28 +255,26 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   return (
     <PublicLayout>
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        {/* Back link */}
-        <Link
-          href={`/events/${params.id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to {event.title}
-        </Link>
+        {event.coverImageUrl && (
+          <div className="w-full rounded-xl overflow-hidden mb-6 max-h-48">
+            <img
+              src={event.coverImageUrl}
+              alt={event.title}
+              className="w-full h-48 object-cover"
+            />
+          </div>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle>{event?.title} Registration</CardTitle>
             <CardDescription>
               {isGuest ? (
-                <>
-                  Register without an account for{" "}
-                  <span className="font-medium text-foreground">{event.title}</span>. Your ticket
-                  link will be sent to your email address.
+                <>Register without an account for{" "}
+                  <span className="font-medium text-foreground">{event.title}</span>.
                 </>
               ) : (
-                <>
-                  Complete the form below to register for{" "}
+                <>Complete the form below to register for{" "}
                   <span className="font-medium text-foreground">{event.title}</span>
                 </>
               )}
@@ -283,7 +294,8 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 <Alert>
                   <Ticket className="h-4 w-4" />
                   <AlertDescription>
-                    Your ticket will be displayed on screen after registration. No account required.
+                    After registration you will receive a <strong>ticket number</strong>. Save it — your ticket is accessible anytime at{" "}
+                    <span className="font-mono text-xs break-all">{ticketBaseUrl}/tickets/[your-ticket-number]</span>.
                   </AlertDescription>
                 </Alert>
               )}
@@ -358,38 +370,116 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="childrenUnder7">Children Under 7</Label>
+                    <Label htmlFor="childrenUnder7">Children Under {childrenAgeThreshold}</Label>
                     <Input
                       id="childrenUnder7"
                       type="number"
-                      min={0}
                       value={formData.childrenUnder7Count}
-                      onChange={(e) => setField("childrenUnder7Count", parseInt(e.target.value) || 0)}
-                      disabled={loading}
+                      readOnly
+                      className="bg-muted cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="childrenOver7">Children Over 7</Label>
+                    <Label htmlFor="childrenOver7">Children {childrenAgeThreshold}+</Label>
                     <Input
                       id="childrenOver7"
                       type="number"
-                      min={0}
                       value={formData.childrenOver7Count}
-                      onChange={(e) => setField("childrenOver7Count", parseInt(e.target.value) || 0)}
-                      disabled={loading}
+                      readOnly
+                      className="bg-muted cursor-not-allowed"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="childrenNamesAndAges">Children Names &amp; Ages</Label>
-                  <Textarea
-                    id="childrenNamesAndAges"
-                    value={formData.childrenNamesAndAges}
-                    onChange={(e) => setField("childrenNamesAndAges", e.target.value)}
-                    placeholder="e.g. Amal (4), Nimal (9)"
-                    rows={2}
-                    disabled={loading}
-                  />
+
+                {/* Dynamic children detail rows */}
+                <div className="space-y-3">
+                  {(formData.children ?? []).length > 0 && (
+                    <>
+                      <Label>Children Names &amp; Ages</Label>
+                      {(formData.children ?? []).map((child, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          placeholder={`Child ${idx + 1} name`}
+                          value={child.childName}
+                          onChange={(e) => {
+                            const updated = [...(formData.children ?? [])];
+                            updated[idx] = { ...updated[idx], childName: e.target.value };
+                            setField("children", updated);
+                          }}
+                          disabled={loading}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Age"
+                          min={0}
+                          max={18}
+                          value={child.childAge || ""}
+                          onChange={(e) => {
+                            const updated = [...(formData.children ?? [])];
+                            updated[idx] = { ...updated[idx], childAge: parseInt(e.target.value) || 0 };
+                            setField("children", updated);
+                          }}
+                          disabled={loading}
+                          className="w-20"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          disabled={loading}
+                          onClick={() => {
+                            const updated = (formData.children ?? []).filter((_, i) => i !== idx);
+                            const isOver = child.childAge >= childrenAgeThreshold;
+                            setFormData((prev) => ({
+                              ...prev,
+                              children: updated,
+                              childrenUnder7Count: isOver ? (prev.childrenUnder7Count ?? 0) : Math.max(0, (prev.childrenUnder7Count ?? 0) - 1),
+                              childrenOver7Count: isOver ? Math.max(0, (prev.childrenOver7Count ?? 0) - 1) : (prev.childrenOver7Count ?? 0),
+                            }));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    </>
+                  )}
+                  <div className="grid sm:grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={loading}
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            children: [...(prev.children ?? []), { childName: "", childAge: 0 }],
+                            childrenUnder7Count: (prev.childrenUnder7Count ?? 0) + 1,
+                          }));
+                        }}
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Child Under {childrenAgeThreshold}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={loading}
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            children: [...(prev.children ?? []), { childName: "", childAge: childrenAgeThreshold }],
+                            childrenOver7Count: (prev.childrenOver7Count ?? 0) + 1,
+                          }));
+                        }}
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Child {childrenAgeThreshold}+
+                      </Button>
+                    </div>
                 </div>
               </section>
 

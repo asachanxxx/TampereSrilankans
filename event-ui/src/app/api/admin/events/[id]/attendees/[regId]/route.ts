@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@backend/lib/supabase/server';
 import { RegistrationRepository } from '@backend/repositories/RegistrationRepository';
+import { ChildrenRepository } from '@backend/repositories/ChildrenRepository';
 import { requireAdmin } from '@/lib/auth';
 
 /**
@@ -24,6 +25,7 @@ export async function PATCH(
       childrenUnder7Count,
       childrenOver7Count,
       childrenNamesAndAges,
+      children,
       vegetarianMealCount,
       nonVegetarianMealCount,
       otherPreferences,
@@ -42,14 +44,43 @@ export async function PATCH(
     if (nonVegetarianMealCount !== undefined) fields.non_vegetarian_meal_count = nonVegetarianMealCount;
     if (otherPreferences !== undefined) fields.other_preferences = otherPreferences;
 
-    if (Object.keys(fields).length === 0) {
+    if (Object.keys(fields).length === 0 && children === undefined) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
     const repo = new RegistrationRepository(supabase);
 
-    const registration = await repo.updateRegistration(params.regId, fields);
+    let registration = null;
+    if (Object.keys(fields).length > 0) {
+      registration = await repo.updateRegistration(params.regId, fields);
+    } else {
+      registration = await repo.getRegistrationById(params.regId);
+    }
+
+    // Update structured children if provided
+    if (children !== undefined && Array.isArray(children)) {
+      // Find the ticket via (user_id, event_id) or (email, event_id) for guests
+      const reg = registration ?? await repo.getRegistrationById(params.regId);
+      if (reg) {
+        let ticketQuery = supabase
+          .from('tickets')
+          .select('id')
+          .eq('event_id', reg.eventId);
+
+        if (reg.userId) {
+          ticketQuery = ticketQuery.eq('user_id', reg.userId);
+        } else {
+          ticketQuery = ticketQuery.is('user_id', null).eq('issued_to_email', reg.email);
+        }
+
+        const { data: ticketData } = await ticketQuery.single();
+        if (ticketData?.id) {
+          const childrenRepo = new ChildrenRepository(supabase);
+          await childrenRepo.replaceChildren(ticketData.id, children);
+        }
+      }
+    }
 
     return NextResponse.json({ registration }, { status: 200 });
   } catch (error: any) {
