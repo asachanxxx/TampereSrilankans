@@ -48,6 +48,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
     children: [],
     vegetarianMealCount: 0,
     nonVegetarianMealCount: 0,
+    kidsMealCount: 0,
     otherPreferences: "",
     consentToStorePersonalData: false,
   });
@@ -518,7 +519,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="vegetarianMeals">Vegetarian Meals</Label>
+                    <Label htmlFor="vegetarianMeals">No Of Vegetarian Meals</Label>
                     <Input
                       id="vegetarianMeals"
                       type="number"
@@ -529,13 +530,24 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nonVegetarianMeals">Non-Vegetarian Meals</Label>
+                    <Label htmlFor="nonVegetarianMeals">No Of Non-Vegetarian Meals</Label>
                     <Input
                       id="nonVegetarianMeals"
                       type="number"
                       min={0}
                       value={formData.nonVegetarianMealCount}
                       onChange={(e) => setField("nonVegetarianMealCount", parseInt(e.target.value) || 0)}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kidsMeals">No Of Kid's Meals</Label>
+                    <Input
+                      id="kidsMeals"
+                      type="number"
+                      min={0}
+                      value={formData.kidsMealCount}
+                      onChange={(e) => setField("kidsMealCount", parseInt(e.target.value) || 0)}
                       disabled={loading}
                     />
                   </div>

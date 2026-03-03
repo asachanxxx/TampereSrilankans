@@ -28,21 +28,23 @@ export async function PATCH(
       children,
       vegetarianMealCount,
       nonVegetarianMealCount,
+      kidsMealCount,
       otherPreferences,
     } = body;
 
-    // Build update fields – only include keys that were provided
+    // Build update fields – only include keys that were provided (camelCase to match RegistrationRepository)
     const fields: Record<string, any> = {};
-    if (fullName !== undefined) fields.full_name = fullName;
+    if (fullName !== undefined) fields.fullName = fullName;
     if (email !== undefined) fields.email = email;
-    if (whatsappNumber !== undefined) fields.whatsapp_number = whatsappNumber;
-    if (spouseName !== undefined) fields.spouse_name = spouseName;
-    if (childrenUnder7Count !== undefined) fields.children_under_7_count = childrenUnder7Count;
-    if (childrenOver7Count !== undefined) fields.children_over_7_count = childrenOver7Count;
-    if (childrenNamesAndAges !== undefined) fields.children_names_and_ages = childrenNamesAndAges;
-    if (vegetarianMealCount !== undefined) fields.vegetarian_meal_count = vegetarianMealCount;
-    if (nonVegetarianMealCount !== undefined) fields.non_vegetarian_meal_count = nonVegetarianMealCount;
-    if (otherPreferences !== undefined) fields.other_preferences = otherPreferences;
+    if (whatsappNumber !== undefined) fields.whatsappNumber = whatsappNumber;
+    if (spouseName !== undefined) fields.spouseName = spouseName;
+    if (childrenUnder7Count !== undefined) fields.childrenUnder7Count = childrenUnder7Count;
+    if (childrenOver7Count !== undefined) fields.childrenOver7Count = childrenOver7Count;
+    if (childrenNamesAndAges !== undefined) fields.childrenNamesAndAges = childrenNamesAndAges;
+    if (vegetarianMealCount !== undefined) fields.vegetarianMealCount = vegetarianMealCount;
+    if (nonVegetarianMealCount !== undefined) fields.nonVegetarianMealCount = nonVegetarianMealCount;
+    if (kidsMealCount !== undefined) fields.kidsMealCount = kidsMealCount;
+    if (otherPreferences !== undefined) fields.otherPreferences = otherPreferences;
 
     if (Object.keys(fields).length === 0 && children === undefined) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

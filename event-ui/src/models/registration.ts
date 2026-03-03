@@ -28,6 +28,7 @@ export type Registration = {
   children?: RegistrationChild[];
   vegetarianMealCount: number;
   nonVegetarianMealCount: number;
+  kidsMealCount: number;
   otherPreferences?: string;
   consentToStorePersonalData: boolean;
 };
@@ -43,6 +44,7 @@ export type RegistrationFormData = {
   children?: RegistrationChild[];
   vegetarianMealCount?: number;
   nonVegetarianMealCount?: number;
+  kidsMealCount?: number;
   otherPreferences?: string;
   consentToStorePersonalData: boolean;
 };

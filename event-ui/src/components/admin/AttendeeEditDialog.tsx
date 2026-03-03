@@ -35,6 +35,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
     childrenNamesAndAges: registration.childrenNamesAndAges ?? "",
     vegetarianMealCount: registration.vegetarianMealCount,
     nonVegetarianMealCount: registration.nonVegetarianMealCount,
+    kidsMealCount: registration.kidsMealCount,
     otherPreferences: registration.otherPreferences ?? "",
   });
   const [children, setChildren] = useState<RegistrationChild[]>(registration.children ?? []);
@@ -63,6 +64,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
           children,
           vegetarianMealCount: Number(form.vegetarianMealCount),
           nonVegetarianMealCount: Number(form.nonVegetarianMealCount),
+          kidsMealCount: Number(form.kidsMealCount),
           otherPreferences: form.otherPreferences || undefined,
         }),
       });
@@ -194,7 +196,7 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-2">
-            <Label className="col-span-1 text-right text-xs">Veg Meals</Label>
+            <Label className="col-span-1 text-right text-xs">No Of Veg Meals</Label>
             <Input
               className="col-span-3"
               type="number"
@@ -204,13 +206,23 @@ export function AttendeeEditDialog({ eventId, registration, open, onClose, onSav
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-2">
-            <Label className="col-span-1 text-right text-xs">Non-Veg Meals</Label>
+            <Label className="col-span-1 text-right text-xs">No Of Non-Veg Meals</Label>
             <Input
               className="col-span-3"
               type="number"
               min={0}
               value={form.nonVegetarianMealCount}
               onChange={(e) => handleChange("nonVegetarianMealCount", Number(e.target.value))}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1 text-right text-xs">No Of Kid's Meals</Label>
+            <Input
+              className="col-span-3"
+              type="number"
+              min={0}
+              value={form.kidsMealCount}
+              onChange={(e) => handleChange("kidsMealCount", Number(e.target.value))}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-2">

@@ -11,6 +11,7 @@ import {
   Search,
   Leaf,
   UtensilsCrossed,
+  Utensils,
   Baby,
   Phone,
   Mail,
@@ -32,6 +33,7 @@ interface Stats {
   total: number;
   vegetarianMeals: number;
   nonVegetarianMeals: number;
+  kidsMeals: number;
   totalChildren: number;
 }
 
@@ -41,9 +43,10 @@ function computeStats(registrations: Registration[]): Stats {
       total: acc.total + 1,
       vegetarianMeals: acc.vegetarianMeals + r.vegetarianMealCount,
       nonVegetarianMeals: acc.nonVegetarianMeals + r.nonVegetarianMealCount,
+      kidsMeals: acc.kidsMeals + r.kidsMealCount,
       totalChildren: acc.totalChildren + r.childrenUnder7Count + r.childrenOver7Count,
     }),
-    { total: 0, vegetarianMeals: 0, nonVegetarianMeals: 0, totalChildren: 0 }
+    { total: 0, vegetarianMeals: 0, nonVegetarianMeals: 0, kidsMeals: 0, totalChildren: 0 }
   );
 }
 
@@ -128,6 +131,10 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
           <UtensilsCrossed className="h-3.5 w-3.5" />
           {stats.nonVegetarianMeals} non-veg
         </Badge>
+        <Badge variant="outline" className="gap-1.5 text-sky-700 border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+          <Utensils className="h-3.5 w-3.5" />
+          {stats.kidsMeals} kids meals
+        </Badge>
         <Badge variant="outline" className="gap-1.5 text-blue-700 border-blue-300 bg-blue-50 dark:bg-blue-950/30">
           <Baby className="h-3.5 w-3.5" />
           {stats.totalChildren} children
@@ -192,6 +199,12 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-orange-700 border-orange-300 bg-orange-50 dark:bg-orange-950/30">
                           <UtensilsCrossed className="h-2.5 w-2.5 mr-0.5" />
                           {reg.nonVegetarianMealCount} non-veg
+                        </Badge>
+                      )}
+                      {reg.kidsMealCount > 0 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-sky-700 border-sky-300 bg-sky-50 dark:bg-sky-950/30">
+                          <Utensils className="h-2.5 w-2.5 mr-0.5" />
+                          {reg.kidsMealCount} kids meal
                         </Badge>
                       )}
                       {(reg.childrenUnder7Count > 0 || reg.childrenOver7Count > 0) && (

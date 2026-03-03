@@ -89,6 +89,10 @@ export class RegistrationValidator {
       throw new ValidationError('Non-vegetarian meal count must be a non-negative integer', 'nonVegetarianMealCount');
     }
 
+    if (data.kidsMealCount !== undefined && (data.kidsMealCount < 0 || !Number.isInteger(data.kidsMealCount))) {
+      throw new ValidationError('Kids meal count must be a non-negative integer', 'kidsMealCount');
+    }
+
     if (!data.whatsappNumber || data.whatsappNumber.trim().length === 0) {
       throw new ValidationError('WhatsApp number is required', 'whatsappNumber');
     }

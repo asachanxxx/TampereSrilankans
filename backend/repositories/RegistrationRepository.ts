@@ -27,6 +27,7 @@ export class RegistrationRepository {
         children_names_and_ages: data.childrenNamesAndAges ?? null,
         vegetarian_meal_count: data.vegetarianMealCount ?? 0,
         non_vegetarian_meal_count: data.nonVegetarianMealCount ?? 0,
+        kids_meal_count: data.kidsMealCount ?? 0,
         other_preferences: data.otherPreferences ?? null,
         consent_to_store_personal_data: data.consentToStorePersonalData,
       }])
@@ -63,6 +64,7 @@ export class RegistrationRepository {
         children_names_and_ages: data.childrenNamesAndAges ?? null,
         vegetarian_meal_count: data.vegetarianMealCount ?? 0,
         non_vegetarian_meal_count: data.nonVegetarianMealCount ?? 0,
+        kids_meal_count: data.kidsMealCount ?? 0,
         other_preferences: data.otherPreferences ?? null,
         consent_to_store_personal_data: data.consentToStorePersonalData,
       }])
@@ -180,6 +182,7 @@ export class RegistrationRepository {
       childrenNamesAndAges?: string | null;
       vegetarianMealCount?: number;
       nonVegetarianMealCount?: number;
+      kidsMealCount?: number;
       otherPreferences?: string | null;
     }
   ): Promise<Registration> {
@@ -193,6 +196,7 @@ export class RegistrationRepository {
     if ('childrenNamesAndAges' in fields)           dbUpdates.children_names_and_ages = fields.childrenNamesAndAges ?? null;
     if (fields.vegetarianMealCount !== undefined)   dbUpdates.vegetarian_meal_count = fields.vegetarianMealCount;
     if (fields.nonVegetarianMealCount !== undefined) dbUpdates.non_vegetarian_meal_count = fields.nonVegetarianMealCount;
+    if (fields.kidsMealCount !== undefined)          dbUpdates.kids_meal_count = fields.kidsMealCount;
     if ('otherPreferences' in fields)               dbUpdates.other_preferences = fields.otherPreferences ?? null;
 
     const { data, error } = await this.supabase
@@ -243,6 +247,7 @@ export class RegistrationRepository {
       childrenNamesAndAges: row.children_names_and_ages ?? undefined,
       vegetarianMealCount: row.vegetarian_meal_count ?? 0,
       nonVegetarianMealCount: row.non_vegetarian_meal_count ?? 0,
+      kidsMealCount: row.kids_meal_count ?? 0,
       otherPreferences: row.other_preferences ?? undefined,
       consentToStorePersonalData: row.consent_to_store_personal_data,
     };

@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       children,
       vegetarianMealCount,
       nonVegetarianMealCount,
+      kidsMealCount,
       otherPreferences,
       consentToStorePersonalData,
     } = body;
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       children: children ?? [],
       vegetarianMealCount,
       nonVegetarianMealCount,
+      kidsMealCount,
       otherPreferences,
       consentToStorePersonalData,
     };

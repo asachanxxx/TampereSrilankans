@@ -10,6 +10,7 @@ import {
   Search,
   Leaf,
   UtensilsCrossed,
+  Utensils,
   Baby,
   Phone,
   Mail,
@@ -28,6 +29,7 @@ interface Stats {
   total: number;
   vegetarianMeals: number;
   nonVegetarianMeals: number;
+  kidsMeals: number;
   totalChildren: number;
 }
 
@@ -37,10 +39,11 @@ function computeStats(registrations: Registration[]): Stats {
       total: acc.total + 1,
       vegetarianMeals: acc.vegetarianMeals + r.vegetarianMealCount,
       nonVegetarianMeals: acc.nonVegetarianMeals + r.nonVegetarianMealCount,
+      kidsMeals: acc.kidsMeals + r.kidsMealCount,
       totalChildren:
         acc.totalChildren + r.childrenUnder7Count + r.childrenOver7Count,
     }),
-    { total: 0, vegetarianMeals: 0, nonVegetarianMeals: 0, totalChildren: 0 }
+    { total: 0, vegetarianMeals: 0, nonVegetarianMeals: 0, kidsMeals: 0, totalChildren: 0 }
   );
 }
 
@@ -122,6 +125,12 @@ export function AdminEventAttendeesTab({ eventId }: Props) {
           label="Non-Veg"
           value={stats.nonVegetarianMeals}
           color="amber"
+        />
+        <StatPill
+          icon={<Utensils className="h-4 w-4" />}
+          label="Kids Meals"
+          value={stats.kidsMeals}
+          color="blue"
         />
         <StatPill
           icon={<Baby className="h-4 w-4" />}
@@ -269,6 +278,12 @@ function AttendeeCard({ registration: r }: { registration: Registration }) {
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5">
                   <UtensilsCrossed className="h-3 w-3" />
                   {r.nonVegetarianMealCount} non-veg
+                </span>
+              )}
+              {r.kidsMealCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5">
+                  <Utensils className="h-3 w-3" />
+                  {r.kidsMealCount} kids meal
                 </span>
               )}
               {totalChildren > 0 && (

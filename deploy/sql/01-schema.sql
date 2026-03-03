@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
   children_names_and_ages       TEXT,
   vegetarian_meal_count         INT NOT NULL DEFAULT 0,
   non_vegetarian_meal_count     INT NOT NULL DEFAULT 0,
+  kids_meal_count               INT NOT NULL DEFAULT 0,
   other_preferences             TEXT,
   consent_to_store_personal_data BOOLEAN NOT NULL DEFAULT false,
   UNIQUE(event_id, user_id)
