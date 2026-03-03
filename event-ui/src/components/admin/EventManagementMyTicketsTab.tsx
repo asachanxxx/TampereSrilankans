@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Ticket as TicketIcon,
   Eye,
+  RefreshCw,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -73,8 +74,9 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
     }
   };
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError("");
     fetch(`/api/admin/events/${eventId}/tickets`)
       .then((r) => r.json())
       .then((data) => {
@@ -87,7 +89,10 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [eventId, currentUserId]);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(load, [eventId, currentUserId]);
 
   const stats = useMemo(() => ({
     total: tickets.length,
@@ -239,14 +244,19 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
           <p className="text-sm">No tickets assigned to you for this event.</p>
         </div>
       ) : (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search your tickets…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search your tickets…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" size="icon" onClick={load} disabled={loading} title="Refresh">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
         </div>
       )}
 

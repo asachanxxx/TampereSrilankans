@@ -110,6 +110,27 @@ export function EventManagementPicker({ onSelect }: Props) {
               </Badge>
             </div>
 
+            {(event as any).ticketStats && (
+              <div className="grid grid-cols-4 gap-1.5 mb-3">
+                <div className="rounded-md bg-muted px-2 py-1.5 text-center">
+                  <p className="text-sm font-bold">{(event as any).ticketStats.total}</p>
+                  <p className="text-[10px] text-muted-foreground">Total</p>
+                </div>
+                <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 px-2 py-1.5 text-center">
+                  <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{(event as any).ticketStats.assigned}</p>
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400">Assigned</p>
+                </div>
+                <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 px-2 py-1.5 text-center">
+                  <p className="text-sm font-bold text-amber-700 dark:text-amber-300">{(event as any).ticketStats.paymentSent}</p>
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400">Sent</p>
+                </div>
+                <div className="rounded-md bg-green-50 dark:bg-green-950/30 px-2 py-1.5 text-center">
+                  <p className="text-sm font-bold text-green-700 dark:text-green-300">{(event as any).ticketStats.paidOrBoarded}</p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400">Paid/✓</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />

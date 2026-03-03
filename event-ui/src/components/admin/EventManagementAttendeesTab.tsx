@@ -19,6 +19,7 @@ import {
   CalendarDays,
   UserX,
   Pencil,
+  RefreshCw,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import type { Registration } from "@/models/registration";
@@ -68,8 +69,9 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
       .catch(() => {/* use default 7 */});
   }, []);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError("");
     fetch(`/api/admin/events/${eventId}/attendees`)
       .then((r) => r.json())
       .then((data) => {
@@ -78,7 +80,10 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [eventId]);
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(load, [eventId]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -141,15 +146,20 @@ export function EventManagementAttendeesTab({ eventId, isAdmin }: Props) {
         </Badge>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          placeholder="Search attendees…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Search + Refresh */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search attendees…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Button variant="outline" size="icon" onClick={load} disabled={loading} title="Refresh">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        </Button>
       </div>
 
       {/* Empty state */}

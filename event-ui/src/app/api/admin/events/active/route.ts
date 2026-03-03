@@ -22,7 +22,38 @@ export async function GET() {
       (e) => e.statusId === 'ongoing' || e.statusId === 'ticket_closed'
     );
 
-    return NextResponse.json({ events: activeEvents }, { status: 200 });
+    // Fetch ticket stage counts for each active event in a single query
+    const activeEventIds = activeEvents.map((e) => e.id);
+    const ticketStatsMap: Record<string, { total: number; assigned: number; paymentSent: number; paidOrBoarded: number }> = {};
+
+    if (activeEventIds.length > 0) {
+      const { data: ticketRows } = await supabase
+        .from('tickets')
+        .select('event_id, assigned_to_id, payment_status, boarding_status')
+        .in('event_id', activeEventIds);
+
+      for (const t of ticketRows ?? []) {
+        if (!ticketStatsMap[t.event_id]) {
+          ticketStatsMap[t.event_id] = { total: 0, assigned: 0, paymentSent: 0, paidOrBoarded: 0 };
+        }
+        const s = ticketStatsMap[t.event_id];
+        s.total++;
+        if (t.boarding_status === 'boarded' || t.payment_status === 'paid') {
+          s.paidOrBoarded++;
+        } else if (t.payment_status === 'payment_sent') {
+          s.paymentSent++;
+        } else if (t.assigned_to_id !== null) {
+          s.assigned++;
+        }
+      }
+    }
+
+    const eventsWithStats = activeEvents.map((e) => ({
+      ...e,
+      ticketStats: ticketStatsMap[e.id] ?? { total: 0, assigned: 0, paymentSent: 0, paidOrBoarded: 0 },
+    }));
+
+    return NextResponse.json({ events: eventsWithStats }, { status: 200 });
   } catch (error: any) {
     console.error('GET /api/admin/events/active error:', error);
     const status =
