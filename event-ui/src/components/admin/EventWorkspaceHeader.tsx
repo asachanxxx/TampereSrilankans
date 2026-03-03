@@ -3,13 +3,13 @@
 import { Event } from "@/models/event";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, ChevronLeft } from "lucide-react";
+import { Calendar, MapPin, FileText, Utensils, Baby } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Props = {
   event: Event;
-  onChangeEvent: () => void;
+  isAdmin?: boolean;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -22,7 +22,11 @@ const STATUS_LABELS: Record<string, string> = {
   ticket_closed: "Ticket Closed",
 };
 
-export function EventWorkspaceHeader({ event, onChangeEvent }: Props) {
+export function EventWorkspaceHeader({ event, isAdmin }: Props) {
+  const openReport = (type: string) => {
+    window.open(`/admin/reports/${event.id}/${type}`, "_blank");
+  };
+
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
@@ -55,11 +59,23 @@ export function EventWorkspaceHeader({ event, onChangeEvent }: Props) {
           </div>
         </div>
 
-        {/* Right: change event */}
-        <Button variant="outline" size="sm" onClick={onChangeEvent} className="shrink-0 gap-1.5">
-          <ChevronLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Change Event</span>
-        </Button>
+        {/* Right: report buttons (admin only) */}
+        {isAdmin && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openReport("attendees")}>
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Attendees</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openReport("meals")}>
+              <Utensils className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Meals</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openReport("children")}>
+              <Baby className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Children's</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

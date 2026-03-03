@@ -58,7 +58,7 @@ export default function EventManagementPage() {
     <div>
       <EventWorkspaceHeader
         event={selectedEvent}
-        onChangeEvent={() => setSelectedEvent(null)}
+        isAdmin={isAdmin}
       />
 
       {isAdmin && <EventAdminStatusBar eventId={selectedEvent.id} />}
