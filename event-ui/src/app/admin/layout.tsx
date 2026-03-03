@@ -6,7 +6,7 @@ import { useSession } from "@/state/session";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Loader2 } from "lucide-react";
 
-const STAFF_PATHS = ["/admin/event-management"];
+const STAFF_PATHS = ["/admin/event-management", "/admin/check-in"];
 
 function isOrganizer(role: string) {
   return role === "organizer" || role === "moderator" || role === "admin";

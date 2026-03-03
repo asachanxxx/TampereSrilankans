@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock } from "lucide-react";
+import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +36,7 @@ const adminNavItems = [
 
 const staffNavItems = [
   { href: "/admin/event-management", icon: ClipboardList, label: "Event Mgmt" },
+  { href: "/admin/check-in",         icon: ScanLine,      label: "Check-in" },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

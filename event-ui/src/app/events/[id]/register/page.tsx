@@ -204,18 +204,19 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                     Your Ticket
                   </div>
 
-                  {/* QR Code */}
-                  {ticketFullUrl && (
+                  {/* QR Code — encodes ticket number for boarding scan */}
+                  {ticketNumber && (
                     <div className="flex flex-col items-center gap-1 py-2">
                       <QRCodeSVG
-                        value={ticketFullUrl}
+                        value={ticketNumber}
                         size={160}
                         bgColor="#ffffff"
                         fgColor="#0f172a"
                         level="M"
                         includeMargin
                       />
-                      <p className="text-xs text-muted-foreground">Scan to open ticket — take a screenshot to save</p>
+                      <p className="text-xs text-muted-foreground">Show this QR code at the event entrance</p>
+                      <p className="text-xs text-muted-foreground">Take a screenshot to save</p>
                     </div>
                   )}
 
