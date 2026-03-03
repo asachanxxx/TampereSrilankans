@@ -21,7 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { TicketQRCode } from "@/components/events/TicketQRCode";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData, RegistrationChild } from "@/models/registration";
 import type { Event } from "@/models/event";
@@ -204,17 +204,10 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                     Your Ticket
                   </div>
 
-                  {/* QR Code — encodes ticket number for boarding scan */}
+                  {/* QR Code — same JSON format as ticket page for boarding scan */}
                   {ticketNumber && (
                     <div className="flex flex-col items-center gap-1 py-2">
-                      <QRCodeSVG
-                        value={ticketNumber}
-                        size={160}
-                        bgColor="#ffffff"
-                        fgColor="#0f172a"
-                        level="M"
-                        includeMargin
-                      />
+                      <TicketQRCode ticketNumber={ticketNumber} eventId={params.id} size={160} />
                       <p className="text-xs text-muted-foreground">Show this QR code at the event entrance</p>
                       <p className="text-xs text-muted-foreground">Take a screenshot to save</p>
                     </div>

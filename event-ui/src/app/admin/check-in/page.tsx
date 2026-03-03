@@ -76,9 +76,16 @@ export default function CheckInPage() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText: string) => {
-          // Handles raw "EVT-XXXXXXXX" or a URL containing the ticket number
-          const match = decodedText.match(/EVT-[A-F0-9]{8}/i);
-          const ticketNumber = match ? match[0].toUpperCase() : decodedText.trim();
+          // Handles JSON format: {ticketNumber, eventId, timestamp}
+          // Also handles raw "EVT-XXXXXXXX" or URL as fallback
+          let ticketNumber: string;
+          try {
+            const parsed = JSON.parse(decodedText);
+            ticketNumber = parsed.ticketNumber ?? decodedText.trim();
+          } catch {
+            const match = decodedText.match(/EVT-[A-F0-9]{8}/i);
+            ticketNumber = match ? match[0].toUpperCase() : decodedText.trim();
+          }
 
           await scanner.stop();
           scannerRef.current = null;
