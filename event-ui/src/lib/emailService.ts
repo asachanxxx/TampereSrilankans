@@ -27,8 +27,10 @@ export async function sendTicketEmail(
   }
 
   const ticketUrl = `${APP_URL}/tickets/${ticketNumber}`;
+  console.log(`[emailService] Connecting to Gmail SMTP as ${process.env.GMAIL_USER}`);
+  console.log(`[emailService] Composing email → to: ${toEmail}, event: "${eventTitle}", ticket: ${ticketNumber}, url: ${ticketUrl}`);
 
-  await transport.sendMail({
+  const info = await transport.sendMail({
     from: `${ORG_NAME} <${process.env.GMAIL_USER}>`,
     to: toEmail,
     subject: `Your ticket for ${eventTitle}`,
@@ -53,6 +55,7 @@ export async function sendTicketEmail(
     `,
     text: `Hi ${toName},\n\nYour registration for "${eventTitle}" was successful.\n\nView your ticket: ${ticketUrl}\n\nTicket number: ${ticketNumber}\n\n${ORG_NAME} Association`,
   });
+  console.log(`[emailService] Email accepted by SMTP server. MessageId: ${info.messageId}`);
 }
 
 /**

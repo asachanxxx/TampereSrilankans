@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@backend/lib/supabase/server';
 import { RegistrationService } from '@backend/services/RegistrationService';
-import { getCurrentUser, requireAuth } from '../../../lib/auth';
+import { TicketService } from '@backend/services/TicketService';
+import { requireAuth } from '../../../lib/auth';
+import { sendTicketEmail } from '../../../lib/emailService';
 
 /**
  * POST /api/registrations
@@ -58,9 +60,14 @@ export async function POST(request: NextRequest) {
       const guestRegistrationService = new RegistrationService(adminSupabase);
       const { registration, ticket } = await guestRegistrationService.registerGuest(eventId, formData);
 
-      // Email sending disabled — ticket is shown in UI modal instead
-      // sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
-      //   .catch((err) => console.error('Failed to send ticket email:', err));
+      // Send ticket email fire-and-forget (failure must not break the response)
+      adminSupabase.from('events').select('title').eq('id', eventId).single()
+        .then(({ data: eventRow }) => {
+          console.log(`[email] Sending ticket email to ${email} for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
+          sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
+            .then(() => console.log(`[email] Ticket email sent successfully to ${email} (ticket: ${ticket.ticketNumber})`))
+            .catch((err) => console.error(`[email] Failed to send ticket email to ${email}:`, err));
+        });
 
       return NextResponse.json(
         {
@@ -81,6 +88,21 @@ export async function POST(request: NextRequest) {
       user,
       formData
     );
+
+    // Send ticket email fire-and-forget
+    Promise.all([
+      new TicketService(supabase).getUserTicketForEvent(user.id, eventId, user),
+      supabase.from('events').select('title').eq('id', eventId).single(),
+    ]).then(([ticket, { data: eventRow }]) => {
+      if (ticket) {
+        console.log(`[email] Sending ticket email to ${formData.email} for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
+        sendTicketEmail(formData.email, formData.fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
+          .then(() => console.log(`[email] Ticket email sent successfully to ${formData.email} (ticket: ${ticket.ticketNumber})`))
+          .catch((err) => console.error(`[email] Failed to send ticket email to ${formData.email}:`, err));
+      } else {
+        console.warn(`[email] No ticket found for user ${user.id} on event ${eventId} — email not sent.`);
+      }
+    }).catch((err) => console.error('[email] Failed to prepare ticket email:', err));
 
     return NextResponse.json(
       {
