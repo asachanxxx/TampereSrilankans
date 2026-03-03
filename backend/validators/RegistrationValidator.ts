@@ -89,6 +89,15 @@ export class RegistrationValidator {
       throw new ValidationError('Non-vegetarian meal count must be a non-negative integer', 'nonVegetarianMealCount');
     }
 
+    if (!data.whatsappNumber || data.whatsappNumber.trim().length === 0) {
+      throw new ValidationError('WhatsApp number is required', 'whatsappNumber');
+    }
+
+    const whatsappPattern = /^\+358\d{6,12}$|^\+94\d{7,12}$/;
+    if (!whatsappPattern.test(data.whatsappNumber.replace(/\s/g, ''))) {
+      throw new ValidationError('WhatsApp number must start with +358 (Finnish) or +94 (Sri Lankan)', 'whatsappNumber');
+    }
+
     if (!data.consentToStorePersonalData) {
       throw new ValidationError('You must consent to storing personal data to register', 'consentToStorePersonalData');
     }

@@ -76,7 +76,7 @@ export function EventRegistrationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Register for Event</DialogTitle>
+          <DialogTitle>{event?.title} Registration</DialogTitle>
           <DialogDescription>
             Complete your registration for {event.title}
           </DialogDescription>

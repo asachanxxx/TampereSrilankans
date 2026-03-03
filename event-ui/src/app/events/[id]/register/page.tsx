@@ -99,13 +99,29 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
     e.preventDefault();
     setError("");
 
-    if (!formData.consentToStorePersonalData) {
-      setError("You must consent to storing your personal data to register.");
+    if (!formData.fullName || formData.fullName.trim().length === 0) {
+      setError("Full name is required.");
       return;
     }
 
     if (isGuest && !formData.email) {
       setError("Please provide your email address so we can send your ticket.");
+      return;
+    }
+
+    if (!formData.whatsappNumber) {
+      setError("WhatsApp number is required.");
+      return;
+    }
+    const whatsappPattern = /^\+358\d{6,12}$|^\+94\d{7,12}$/;
+    const whatsappCleaned = formData.whatsappNumber.replace(/\s/g, "");
+    if (!whatsappPattern.test(whatsappCleaned)) {
+      setError("WhatsApp number must start with +358 (Finnish) or +94 (Sri Lankan).");
+      return;
+    }
+
+    if (!formData.consentToStorePersonalData) {
+      setError("You must consent to storing your personal data to register.");
       return;
     }
 
@@ -237,7 +253,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
 
         <Card>
           <CardHeader>
-            <CardTitle>Event Registration</CardTitle>
+            <CardTitle>{event?.title} Registration</CardTitle>
             <CardDescription>
               {isGuest ? (
                 <>
@@ -309,15 +325,17 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                  <Label htmlFor="whatsappNumber">WhatsApp Number <span className="text-destructive">*</span></Label>
                   <Input
                     id="whatsappNumber"
                     type="tel"
                     value={formData.whatsappNumber}
                     onChange={(e) => setField("whatsappNumber", e.target.value)}
-                    placeholder="+358 40 123 4567"
+                    placeholder="+358 40 123 4567 or +94 77 123 4567"
                     disabled={loading}
+                    required
                   />
+                  <p className="text-xs text-muted-foreground">Must start with +358 (Finland) or +94 (Sri Lanka)</p>
                 </div>
               </section>
 
