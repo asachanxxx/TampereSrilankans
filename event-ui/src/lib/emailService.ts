@@ -1,17 +1,16 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 const ORG_NAME = 'Tampere Sri Lankans';
 
-function createTransport() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
+function createClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
 }
 
 /**
- * Send a ticket link email via Gmail to a registrant.
+ * Send a ticket link email via Resend to a registrant.
  */
 export async function sendTicketEmail(
   toEmail: string,
@@ -19,19 +18,20 @@ export async function sendTicketEmail(
   eventTitle: string,
   ticketNumber: string
 ): Promise<void> {
-  const transport = createTransport();
+  const client = createClient();
 
-  if (!transport) {
-    console.warn('[emailService] GMAIL_USER or GMAIL_APP_PASSWORD not set — skipping ticket email.');
+  if (!client) {
+    console.warn('[emailService] RESEND_API_KEY not set — skipping ticket email.');
     return;
   }
 
   const ticketUrl = `${APP_URL}/tickets/${ticketNumber}`;
-  console.log(`[emailService] Connecting to Gmail SMTP as ${process.env.GMAIL_USER}`);
-  console.log(`[emailService] Composing email → to: ${toEmail}, event: "${eventTitle}", ticket: ${ticketNumber}, url: ${ticketUrl}`);
+  console.log(`[emailService] Sending via Resend → to: ${toEmail}, event: "${eventTitle}", ticket: ${ticketNumber}, url: ${ticketUrl}`);
 
-  const info = await transport.sendMail({
-    from: `${ORG_NAME} <${process.env.GMAIL_USER}>`,
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+
+  const { data, error } = await client.emails.send({
+    from: `${ORG_NAME} <${fromAddress}>`,
     to: toEmail,
     subject: `Your ticket for ${eventTitle}`,
     html: `
@@ -55,7 +55,11 @@ export async function sendTicketEmail(
     `,
     text: `Hi ${toName},\n\nYour registration for "${eventTitle}" was successful.\n\nView your ticket: ${ticketUrl}\n\nTicket number: ${ticketNumber}\n\n${ORG_NAME} Association`,
   });
-  console.log(`[emailService] Email accepted by SMTP server. MessageId: ${info.messageId}`);
+
+  if (error) {
+    throw new Error(`Resend API error: ${error.message}`);
+  }
+  console.log(`[emailService] Email sent successfully via Resend. MessageId: ${data?.id}`);
 }
 
 /**
