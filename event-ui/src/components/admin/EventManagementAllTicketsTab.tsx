@@ -194,7 +194,7 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
             return (
               <Card key={ticket.id}>
                 <CardContent className="p-3 space-y-2">
-                  {/* Header row */}
+                  {/* Row 1: stage | name + ticket# + email | actions */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex items-center gap-2">
                       <Badge variant="outline" className={`text-xs shrink-0 ${stageStyle[stage]}`}>
@@ -202,7 +202,12 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
                       </Badge>
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{ticket.issuedToName}</p>
-                        <p className="font-mono text-[11px] text-muted-foreground">{ticket.ticketNumber}</p>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <span className="font-mono">{ticket.ticketNumber}</span>
+                          <span className="opacity-40">·</span>
+                          <Mail className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{ticket.issuedToEmail}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0">
@@ -235,12 +240,6 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{ticket.issuedToEmail}</span>
                   </div>
 
                   {/* Assignment + Stage in one row */}

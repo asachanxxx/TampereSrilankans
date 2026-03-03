@@ -10,6 +10,7 @@ import { EventWorkspaceHeader } from "@/components/admin/EventWorkspaceHeader";
 import { EventManagementAttendeesTab } from "@/components/admin/EventManagementAttendeesTab";
 import { EventManagementAllTicketsTab } from "@/components/admin/EventManagementAllTicketsTab";
 import { EventManagementMyTicketsTab } from "@/components/admin/EventManagementMyTicketsTab";
+import { EventAdminStatusBar } from "@/components/admin/EventAdminStatusBar";
 
 function isOrganizer(role?: string) {
   return role === "organizer" || role === "moderator" || role === "admin";
@@ -59,6 +60,8 @@ export default function EventManagementPage() {
         event={selectedEvent}
         onChangeEvent={() => setSelectedEvent(null)}
       />
+
+      {isAdmin && <EventAdminStatusBar eventId={selectedEvent.id} />}
 
       <div className="p-4 md:p-6">
         {isAdmin ? (
