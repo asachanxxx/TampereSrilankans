@@ -42,5 +42,10 @@ VALUES
     'ticket_base_url',
     'https://ingenious-bravery-production-2f4e.up.railway.app',
     'Base URL used to build ticket links shown to users after registration.'
+  ),
+  (
+    'ticket_save_message',
+    'Save your ticket number — you will need it when boarding the event.',
+    'Message shown in the Registration Successful dialog reminding users to save their ticket number.'
   )
 ON CONFLICT (key) DO NOTHING;

@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData, RegistrationChild } from "@/models/registration";
 import type { Event } from "@/models/event";
@@ -56,6 +57,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   const [success, setSuccess] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketSaveMessage, setTicketSaveMessage] = useState("Save your ticket number — you will need it when boarding the event.");
 
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
@@ -75,8 +77,9 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         const threshold = parseInt(config.children_age_threshold);
         if (!isNaN(threshold)) setChildrenAgeThreshold(threshold);
         if (config.ticket_base_url) setTicketBaseUrl(config.ticket_base_url);
+        if (config.ticket_save_message) setTicketSaveMessage(config.ticket_save_message);
       })
-      .catch(() => {/* use default 7 */});
+      .catch(() => {/* use defaults */});
   }, []);
 
   // Keep form in sync when user profile loads
@@ -170,12 +173,19 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
 
   if (success) {
     const ticketUrl = ticketNumber ? `/tickets/${ticketNumber}` : null;
+    const ticketFullUrl = ticketNumber
+      ? `${ticketBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '')}/tickets/${ticketNumber}`
+      : null;
 
     return (
       <PublicLayout>
-        {/* Ticket details modal */}
+        {/* Ticket details modal — blocked from closing on outside click or ESC */}
         <Dialog open={showTicketModal} onOpenChange={setShowTicketModal}>
-          <DialogContent className="max-w-md">
+          <DialogContent
+            className="max-w-md max-h-[90vh] overflow-y-auto"
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -193,10 +203,32 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                     <Ticket className="h-4 w-4" />
                     Your Ticket
                   </div>
+
+                  {/* QR Code */}
+                  {ticketFullUrl && (
+                    <div className="flex flex-col items-center gap-1 py-2">
+                      <QRCodeSVG
+                        value={ticketFullUrl}
+                        size={160}
+                        bgColor="#ffffff"
+                        fgColor="#0f172a"
+                        level="M"
+                        includeMargin
+                      />
+                      <p className="text-xs text-muted-foreground">Scan to open ticket — take a screenshot to save</p>
+                    </div>
+                  )}
+
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Ticket Number</p>
-                    <p className="font-mono text-sm font-semibold tracking-wide">{ticketNumber}</p>
+                    <p className="font-mono text-base font-bold tracking-widest">{ticketNumber}</p>
                   </div>
+
+                  {/* Configurable save reminder */}
+                  <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+                    <p className="text-xs text-amber-800 font-medium">{ticketSaveMessage}</p>
+                  </div>
+
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Issued To</p>
                     <p className="text-sm">{formData.fullName}</p>
