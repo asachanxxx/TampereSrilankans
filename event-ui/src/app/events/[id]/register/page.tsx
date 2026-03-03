@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle, User, Users, UtensilsCrossed, ShieldCheck } from "lucide-react";
 import { TicketQRCode } from "@/components/events/TicketQRCode";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData, RegistrationChild } from "@/models/registration";
@@ -292,7 +292,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
           </div>
         )}
 
-        <Card>
+        <Card className="shadow-md">
           <CardHeader>
             <CardTitle>{event?.title} Registration</CardTitle>
             <CardDescription>
@@ -329,9 +329,13 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
 
               {/* Personal Details */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Personal Details
-                </h3>
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <User className="h-4 w-4 text-blue-500" />
+                    <h3 className="font-semibold text-base">Personal Details</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Your contact information for this registration</p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
@@ -378,13 +382,15 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </div>
               </section>
 
-              <Separator />
-
               {/* Family Details */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Family Details
-                </h3>
+                <div className="border-l-4 border-emerald-500 pl-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <Users className="h-4 w-4 text-emerald-500" />
+                    <h3 className="font-semibold text-base">Family Details</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Spouse / partner and children accompanying you</p>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="spouseName">Spouse / Partner Name</Label>
                   <Input
@@ -510,13 +516,15 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </div>
               </section>
 
-              <Separator />
-
               {/* Meal Preferences */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Meal Preferences
-                </h3>
+                <div className="border-l-4 border-amber-500 pl-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <UtensilsCrossed className="h-4 w-4 text-amber-500" />
+                    <h3 className="font-semibold text-base">Meal Preferences</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Help us prepare the right meals for you</p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="vegetarianMeals">No Of Vegetarian Meals</Label>
@@ -565,10 +573,15 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </div>
               </section>
 
-              <Separator />
-
               {/* Consent */}
               <section className="space-y-4">
+                <div className="border-l-4 border-zinc-400 pl-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <ShieldCheck className="h-4 w-4 text-zinc-500" />
+                    <h3 className="font-semibold text-base">Data Consent</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Required to complete your registration</p>
+                </div>
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="consent"
