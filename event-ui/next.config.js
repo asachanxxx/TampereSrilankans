@@ -12,6 +12,23 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
+  // Force browsers and proxies to revalidate public/images/* on every request.
+  // Because these files have no content-hash in their URL, replacing a file with
+  // the same name (e.g. 1.jpg) would otherwise be invisible to cached clients.
+  async headers() {
+    return [
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache',
+          },
+        ],
+      },
+    ];
+  },
+
   webpack: (config) => {
     // Monorepo: backend files live outside event-ui/, so webpack's default
     // node_modules resolution (walking up from the backend folder) never
