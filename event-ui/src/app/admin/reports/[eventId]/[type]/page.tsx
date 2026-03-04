@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Search, FileText } from "lucide-react";
+import { Loader2, Download, Search, FileText, Utensils, Baby } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -221,60 +220,122 @@ function buildCSV(type: ReportType, rows: AnyRow[]): string {
   return toCSV(headers, data);
 }
 
+// ─── Tab config ──────────────────────────────────────────────────────────────
+
+const TABS: { type: ReportType; label: string; icon: React.ReactNode }[] = [
+  { type: "attendees", label: "Attendees",  icon: <FileText  className="h-4 w-4" /> },
+  { type: "meals",     label: "Meals",      icon: <Utensils  className="h-4 w-4" /> },
+  { type: "children",  label: "Children's", icon: <Baby      className="h-4 w-4" /> },
+];
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportPage() {
   const params = useParams<{ eventId: string; type: string }>();
   const eventId = params.eventId;
-  const type = params.type as ReportType;
+  const initialType: ReportType =
+    (params.type as ReportType) in REPORT_META ? (params.type as ReportType) : "attendees";
 
-  const [rows, setRows] = useState<AnyRow[]>([]);
-  const [eventTitle, setEventTitle] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [activeType, setActiveType] = useState<ReportType>(initialType);
+  const [eventTitle, setEventTitle]  = useState("");
 
-  const meta = REPORT_META[type];
+  // Per-tab lazy cache: undefined = not yet fetched
+  const dataCache = useRef<Partial<Record<ReportType, AnyRow[]>>>({});
+  const [tabLoading, setTabLoading]  = useState<ReportType | null>(initialType);
+  const [tabError,   setTabError]    = useState<Partial<Record<ReportType, string>>>({});
+  const [searchByType, setSearchByType] = useState<Record<ReportType, string>>(
+    { attendees: "", meals: "", children: "" }
+  );
+  // Dummy counter to force a re-render after cache writes
+  const [, forceUpdate] = useState(0);
 
+  // Fetch event title once on mount
   useEffect(() => {
-    if (!meta) return;
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/admin/events/${eventId}/report?type=${type}`).then((r) => r.json()),
-      fetch(`/api/events/${eventId}`).then((r) => r.json()).catch(() => ({})),
-    ]).then(([reportData, eventData]) => {
-      if (reportData.error) throw new Error(reportData.error);
-      setRows(reportData.rows ?? []);
-      setEventTitle(eventData?.event?.title ?? eventData?.title ?? "");
-    }).catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [eventId, type]);
+    fetch(`/api/events/${eventId}`)
+      .then((r) => r.json())
+      .then((d) => setEventTitle(d?.event?.title ?? d?.title ?? ""))
+      .catch(() => {});
+  }, [eventId]);
 
-  const handleExport = () => {
-    const csv = buildCSV(type, rows);
-    const safeName = (eventTitle || eventId).replace(/[^a-z0-9]/gi, "_").toLowerCase();
-    downloadCSV(`${safeName}_${type}_report.csv`, csv);
+  // Lazy-fetch a single report type (no-op if already cached)
+  const fetchTab = useCallback(
+    (type: ReportType) => {
+      if (dataCache.current[type] !== undefined) return;
+      setTabLoading(type);
+      fetch(`/api/admin/events/${eventId}/report?type=${type}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error);
+          dataCache.current[type] = data.rows ?? [];
+          forceUpdate((n) => n + 1);
+        })
+        .catch((e) =>
+          setTabError((prev) => ({ ...prev, [type]: e.message }))
+        )
+        .finally(() =>
+          setTabLoading((prev) => (prev === type ? null : prev))
+        );
+    },
+    [eventId]
+  );
+
+  // Fetch the initial tab on mount
+  useEffect(() => { fetchTab(initialType); }, [fetchTab, initialType]);
+
+  const handleTabChange = (type: ReportType) => {
+    setActiveType(type);
+    fetchTab(type);
   };
 
-  if (!meta) {
-    return <div className="p-8 text-destructive">Invalid report type: {type}</div>;
-  }
+  const activeRows   = dataCache.current[activeType] ?? null;
+  const isLoading    = tabLoading === activeType;
+  const activeError  = tabError[activeType];
+  const activeSearch = searchByType[activeType];
+
+  const handleExport = () => {
+    if (!activeRows) return;
+    const csv = buildCSV(activeType, activeRows);
+    const safeName = (eventTitle || eventId).replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    downloadCSV(`${safeName}_${activeType}_report.csv`, csv);
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
+      {/* Event title */}
+      {eventTitle && (
+        <p className="text-sm text-muted-foreground font-medium">{eventTitle}</p>
+      )}
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab.type}
+            onClick={() => handleTabChange(tab.type)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              activeType === tab.type
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {/* Show a small loading dot when this tab is fetching */}
+            {tabLoading === tab.type && (
+              <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-pulse" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Per-tab header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-xl font-bold">{meta.title}</h1>
-            <Badge variant="secondary">{meta.badge}</Badge>
-          </div>
-          {eventTitle && (
-            <p className="text-sm text-muted-foreground">{eventTitle}</p>
-          )}
-        </div>
-        <Button onClick={handleExport} disabled={loading || rows.length === 0} size="sm">
+        <h1 className="text-xl font-bold">{REPORT_META[activeType].title}</h1>
+        <Button
+          onClick={handleExport}
+          disabled={isLoading || !activeRows || activeRows.length === 0}
+          size="sm"
+        >
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
@@ -286,27 +347,29 @@ export default function ReportPage() {
         <Input
           className="pl-9"
           placeholder="Filter results…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={activeSearch}
+          onChange={(e) =>
+            setSearchByType((prev) => ({ ...prev, [activeType]: e.target.value }))
+          }
         />
       </div>
 
       {/* Content */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : error ? (
+      ) : activeError ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6 text-center text-sm text-destructive">
-          {error}
+          {activeError}
         </div>
-      ) : type === "attendees" ? (
-        <AttendeesTable rows={rows as AttendeeRow[]} search={search} />
-      ) : type === "meals" ? (
-        <MealsTable rows={rows as MealRow[]} search={search} />
-      ) : (
-        <ChildrenTable rows={rows as ChildrenRow[]} search={search} />
-      )}
+      ) : activeType === "attendees" && activeRows ? (
+        <AttendeesTable rows={activeRows as AttendeeRow[]} search={activeSearch} />
+      ) : activeType === "meals" && activeRows ? (
+        <MealsTable rows={activeRows as MealRow[]} search={activeSearch} />
+      ) : activeRows ? (
+        <ChildrenTable rows={activeRows as ChildrenRow[]} search={activeSearch} />
+      ) : null}
     </div>
   );
 }
