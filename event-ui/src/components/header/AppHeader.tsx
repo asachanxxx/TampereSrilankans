@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Calendar } from "lucide-react";
+import Image from "next/image";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -30,7 +31,14 @@ export function AppHeader() {
         <div className="container mx-auto max-w-6xl px-4 flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 font-semibold">
-            <Calendar className="h-6 w-6 flex-shrink-0" />
+            <Image
+              src="/images/logo.png"
+              alt="Sri Lankan Association in Tampere"
+              width={48}
+              height={48}
+              className="flex-shrink-0 rounded-sm"
+              priority
+            />
             <div className="text-sm sm:text-base leading-tight">
               <div>Sri Lankan Association</div>
               <div>in Tampere</div>

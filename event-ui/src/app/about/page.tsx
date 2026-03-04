@@ -1,5 +1,6 @@
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { CheckCircle, Users, CalendarDays, Heart } from "lucide-react";
+import { CheckCircle, Users, CalendarDays, Heart, Mail, Phone, MapPin, Building2, Hash, Globe, Flag, Calendar } from "lucide-react";
+import org from "@/config/organization.json";
 
 export default function AboutPage() {
   return (
@@ -98,8 +99,147 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Contact */}
+      {/* Organisation Details */}
       <section className="py-16">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold tracking-tight mb-2">Organisation Details</h2>
+            <p className="text-muted-foreground">Official information about our registered association</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Official info card */}
+            <div className="rounded-2xl border bg-gradient-to-br from-background to-muted/30 p-6 space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                Official Information
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Registered name</p>
+                    <p className="font-semibold">{org.name}</p>
+                    <p className="text-sm text-muted-foreground">{org.finnishName}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Flag className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Organisation type</p>
+                    <p className="font-medium">{org.type}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Hash className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Business ID</p>
+                    <p className="font-medium font-mono">{org.businessId}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Globe className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Language of operation</p>
+                    <p className="font-medium">{org.language}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Year of foundation</p>
+                    <p className="font-medium">
+                      {org.yearOfFoundation}{" "}
+                      <span className="text-sm text-muted-foreground">
+                        ({new Date().getFullYear() - org.yearOfFoundation} years in operation)
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Domicile</p>
+                    <p className="font-medium">{org.domicile}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact card */}
+            <div className="rounded-2xl border bg-gradient-to-br from-background to-muted/30 p-6 space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                Contact Information
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <a
+                      href={`mailto:${org.contact.email}`}
+                      className="font-medium text-primary hover:underline break-all"
+                    >
+                      {org.contact.email}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <Phone className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    <a
+                      href={`tel:${org.contact.phone.replace(/\s/g, "")}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {org.contact.phone}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Postal address</p>
+                    <p className="font-medium">{org.contact.postalAddress}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick contact CTA */}
+              <div className="mt-6 rounded-xl bg-primary/5 border border-primary/10 p-4 text-sm text-muted-foreground">
+                Interested in joining, volunteering, or sponsoring an event?{" "}
+                <a
+                  href={`mailto:${org.contact.email}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Send us an email
+                </a>{" "}
+                — we'd love to hear from you.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section className="py-16 bg-muted/30">
         <div className="container mx-auto max-w-6xl px-4 text-center">
           <h2 className="text-2xl font-bold mb-3">Get in Touch</h2>
           <p className="text-muted-foreground max-w-lg mx-auto">

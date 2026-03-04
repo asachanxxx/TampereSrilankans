@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Sri Lankan Association in Tampere - Events",
   description: "Discover and register for events organized by the Sri Lankan community in Tampere.",
+  icons: {
+    icon: "/images/favicon.ico",
+  },
 };
 
 export default function RootLayout({
