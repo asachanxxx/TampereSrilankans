@@ -14,7 +14,7 @@ export function EventDetailHeader({ event }: EventDetailHeaderProps) {
       <div className="h-64 md:h-80 w-full rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-background overflow-hidden">
         {event.coverImageUrl ? (
           <img
-            src={event.coverImageUrl}
+            src={`${event.coverImageUrl}?v=${Date.now()}`}
             alt={event.title}
             className="h-full w-full object-cover"
           />

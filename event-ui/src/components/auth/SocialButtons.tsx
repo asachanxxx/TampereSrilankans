@@ -2,62 +2,58 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { signInWithFacebook } from "@/services/authService";
-import { Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Loader2, Facebook } from "lucide-react";
 
 export function SocialButtons() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isFacebookLoading, setIsFacebookLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showFbDialog, setShowFbDialog] = useState(false);
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    setError(null);
-    
     try {
-      // Redirect to server-side OAuth endpoint
       window.location.href = '/api/auth/google';
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch {
       setIsGoogleLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    setIsFacebookLoading(true);
-    setError(null);
-    
-    try {
-      const { error } = await signInWithFacebook();
-      if (error) {
-        setError(error.message);
-        toast.error("Failed to sign in with Facebook");
-      }
-      // OAuth redirect happens automatically
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setIsFacebookLoading(false);
     }
   };
 
   return (
     <div className="space-y-3">
-      {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
-      
+      {/* Facebook not-yet-available dialog */}
+      <Dialog open={showFbDialog} onOpenChange={setShowFbDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Facebook className="h-5 w-5 text-[#1877F2]" />
+              Facebook Sign-In Unavailable
+            </DialogTitle>
+            <DialogDescription className="pt-1 text-sm leading-relaxed">
+              Facebook sign-in is not yet available. Please use{" "}
+              <span className="font-semibold text-foreground">Continue with Google</span>{" "}
+              to sign in to your account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button className="w-full" onClick={() => setShowFbDialog(false)}>
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Button
         variant="outline"
         className="w-full"
         onClick={handleGoogleLogin}
-        disabled={isGoogleLoading || isFacebookLoading}
+        disabled={isGoogleLoading}
         type="button"
       >
         {isGoogleLoading ? (
@@ -84,21 +80,17 @@ export function SocialButtons() {
         )}
         Continue with Google
       </Button>
-      
+
       <Button
         variant="outline"
-        className="w-full"
-        onClick={handleFacebookLogin}
-        disabled={isGoogleLoading || isFacebookLoading}
+        className="w-full opacity-60"
+        onClick={() => setShowFbDialog(true)}
+        disabled={isGoogleLoading}
         type="button"
       >
-        {isFacebookLoading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <svg className="mr-2 h-4 w-4" fill="#1877F2" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-        )}
+        <svg className="mr-2 h-4 w-4" fill="#1877F2" viewBox="0 0 24 24">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+        </svg>
         Continue with Facebook
       </Button>
     </div>

@@ -20,7 +20,7 @@ export function EventCard({ event, href }: EventCardProps) {
         <div className="h-48 w-full rounded-t-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden">
           {event.coverImageUrl ? (
             <img
-              src={event.coverImageUrl}
+              src={`${event.coverImageUrl}?v=${Date.now()}`}
               alt={event.title}
               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
             />

@@ -10,17 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertCircle, CheckCircle2, Loader2, Ticket, Trash2, PlusCircle, User, Users, UtensilsCrossed, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, Loader2, Ticket, Trash2, PlusCircle, User, Users, UtensilsCrossed, ShieldCheck } from "lucide-react";
 import { TicketQRCode } from "@/components/events/TicketQRCode";
 import { useSession } from "@/state/session";
 import type { RegistrationFormData, RegistrationChild } from "@/models/registration";
@@ -54,11 +53,20 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [msgDialog, setMsgDialog] = useState<{
+    open: boolean;
+    type: "error" | "info" | "warning";
+    title: string;
+    body: string;
+  } | null>(null);
   const [success, setSuccess] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSaveMessage, setTicketSaveMessage] = useState("Save your ticket number — you will need it when boarding the event.");
+
+  const showMsg = (type: "error" | "info" | "warning", title: string, body: string) => {
+    setMsgDialog({ open: true, type, title, body });
+  };
 
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
@@ -81,6 +89,19 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         if (config.ticket_save_message) setTicketSaveMessage(config.ticket_save_message);
       })
       .catch(() => {/* use defaults */});
+  }, []);
+
+  // Show guest info dialog once on mount
+  useEffect(() => {
+    if (isGuest) {
+      setMsgDialog({
+        open: true,
+        type: "info",
+        title: "Registering as Guest",
+        body: "After registration you will receive a ticket number. Save it — your ticket is accessible anytime at [site]/tickets/[your-ticket-number]. Make sure to enter a valid email address so we can send you the ticket.",
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keep form in sync when user profile loads
@@ -114,31 +135,30 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (!formData.fullName || formData.fullName.trim().length === 0) {
-      setError("Full name is required.");
+      showMsg("error", "Full Name Required", "Please enter your full name to continue.");
       return;
     }
 
     if (isGuest && !formData.email) {
-      setError("Please provide your email address so we can send your ticket.");
+      showMsg("error", "Email Required", "Please provide your email address so we can send your ticket.");
       return;
     }
 
     if (!formData.whatsappNumber) {
-      setError("WhatsApp number is required.");
+      showMsg("error", "WhatsApp Number Required", "Please enter your WhatsApp number to continue.");
       return;
     }
     const whatsappPattern = /^\+358\d{6,12}$|^\+94\d{7,12}$/;
     const whatsappCleaned = formData.whatsappNumber.replace(/\s/g, "");
     if (!whatsappPattern.test(whatsappCleaned)) {
-      setError("WhatsApp number must start with +358 (Finnish) or +94 (Sri Lankan).");
+      showMsg("error", "Invalid WhatsApp Number", "Your WhatsApp number must start with +358 (Finland) or +94 (Sri Lanka).");
       return;
     }
 
     if (!formData.consentToStorePersonalData) {
-      setError("You must consent to storing your personal data to register.");
+      showMsg("warning", "Consent Required", "You must agree to storing your personal data to complete the registration.");
       return;
     }
 
@@ -166,7 +186,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
       }
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      showMsg("error", "Registration Failed", err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -285,7 +305,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         {event.coverImageUrl && (
           <div className="w-full rounded-xl overflow-hidden mb-6 max-h-48">
             <img
-              src={event.coverImageUrl}
+              src={`${event.coverImageUrl}?v=${Date.now()}`}
               alt={event.title}
               className="w-full h-48 object-cover"
             />
@@ -309,24 +329,52 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
           </CardHeader>
 
           <CardContent>
+            {/* Message dialog — errors, warnings, info */}
+            <Dialog
+              open={!!msgDialog?.open}
+              onOpenChange={(open) =>
+                setMsgDialog((prev) => (prev ? { ...prev, open } : null))
+              }
+            >
+              <DialogContent className="max-w-sm mx-4">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {msgDialog?.type === "error" && (
+                      <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                    )}
+                    {msgDialog?.type === "warning" && (
+                      <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                    )}
+                    {msgDialog?.type === "info" && (
+                      <Info className="h-5 w-5 text-blue-500 shrink-0" />
+                    )}
+                    <span>{msgDialog?.title}</span>
+                  </DialogTitle>
+                  <DialogDescription className="pt-1 text-sm leading-relaxed">
+                    {msgDialog?.body}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    className="w-full"
+                    variant={
+                      msgDialog?.type === "error"
+                        ? "destructive"
+                        : msgDialog?.type === "warning"
+                        ? "outline"
+                        : "default"
+                    }
+                    onClick={() =>
+                      setMsgDialog((prev) => (prev ? { ...prev, open: false } : null))
+                    }
+                  >
+                    OK
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <form onSubmit={handleSubmit} className="space-y-8">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {isGuest && (
-                <Alert>
-                  <Ticket className="h-4 w-4" />
-                  <AlertDescription>
-                    After registration you will receive a <strong>ticket number</strong>. Save it — your ticket is accessible anytime at{" "}
-                    <span className="font-mono text-xs break-all">{ticketBaseUrl}/tickets/[your-ticket-number]</span>.
-                  </AlertDescription>
-                </Alert>
-              )}
-
               {/* Personal Details */}
               <section className="space-y-4">
                 <div className="border-l-4 border-blue-500 pl-4">

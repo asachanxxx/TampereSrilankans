@@ -51,6 +51,7 @@ export class EventRepository {
       throw error;
     }
 
+    console.log('[EventRepository] getEventById raw row:', JSON.stringify(data, null, 2));
     return data ? this.mapToEvent(data) : null;
   }
 
