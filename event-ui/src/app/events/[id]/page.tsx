@@ -117,11 +117,11 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
           <p className="text-sm text-muted-foreground">
             Sign in to register, or register without creating an account and receive your ticket by email.
           </p>
-          <Button className="w-full" asChild>
+          <Button className="w-full hidden" asChild>
             <Link href="/auth">Login to Register</Link>
           </Button>
-          <Button className="w-full" variant="outline" asChild>
-            <Link href={`/events/${params.id}/register?guest=true`}>Register without Sign in</Link>
+          <Button className="w-full" asChild>
+            <Link href={`/events/${params.id}/register?guest=true`}>Register Now</Link>
           </Button>
         </>
       );
