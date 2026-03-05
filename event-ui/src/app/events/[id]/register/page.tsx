@@ -91,18 +91,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
       .catch(() => {/* use defaults */});
   }, []);
 
-  // Show guest info dialog once on mount
-  useEffect(() => {
-    if (isGuest) {
-      setMsgDialog({
-        open: true,
-        type: "info",
-        title: "Registering as Guest",
-        body: "After registration you will receive a ticket number. Save it — your ticket is accessible anytime at [site]/tickets/[your-ticket-number]. Make sure to enter a valid email address so we can send you the ticket.",
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   // Keep form in sync when user profile loads
   useEffect(() => {
