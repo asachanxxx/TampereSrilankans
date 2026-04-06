@@ -5,6 +5,9 @@ import { useParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Download, Search, FileText, Utensils, Baby } from "lucide-react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +49,27 @@ function downloadCSV(filename: string, content: string) {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadExcel(filename: string, headers: string[], rows: string[][]) {
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  XLSX.writeFile(wb, filename);
+}
+
+function downloadPDF(filename: string, title: string, headers: string[], rows: string[][]) {
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(12);
+  doc.text(title, 14, 15);
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    startY: 22,
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [51, 51, 51] },
+  });
+  doc.save(filename);
 }
 
 const TICKET_STATUS_COLORS: Record<string, string> = {
@@ -201,22 +225,29 @@ function ChildrenTable({ rows, search }: { rows: ChildrenRow[]; search: string }
   );
 }
 
-// ─── CSV builders ─────────────────────────────────────────────────────────────
+// ─── Data builders ────────────────────────────────────────────────────────────
 
-function buildCSV(type: ReportType, rows: AnyRow[]): string {
+function buildTableData(type: ReportType, rows: AnyRow[]): { headers: string[]; data: string[][] } {
   if (type === "attendees") {
-    const headers = ["Full Name","Email","WhatsApp","Spouse / Partner","Children Under 12","Children 12+","Total Children","Ticket Status","Assigned Staff"];
-    const data = (rows as AttendeeRow[]).map((r) => [r.fullName, r.email, r.whatsapp, r.spouse, String(r.under7), String(r.over7), String(r.totalChildren), r.ticketStatus, r.assignedStaff]);
-    return toCSV(headers, data);
+    return {
+      headers: ["Full Name","Email","WhatsApp","Spouse / Partner","Children Under 12","Children 12+","Total Children","Ticket Status","Assigned Staff"],
+      data: (rows as AttendeeRow[]).map((r) => [r.fullName, r.email, r.whatsapp, r.spouse, String(r.under7), String(r.over7), String(r.totalChildren), r.ticketStatus, r.assignedStaff]),
+    };
   }
   if (type === "meals") {
-    const headers = ["Full Name","WhatsApp","Veg Meals","Non-Veg Meals","Kids Meals","Other Preferences"];
-    const data = (rows as MealRow[]).map((r) => [r.fullName, r.whatsapp, String(r.vegMeals), String(r.nonVegMeals), String(r.kidsMeals), r.otherPreferences]);
-    return toCSV(headers, data);
+    return {
+      headers: ["Full Name","WhatsApp","Veg Meals","Non-Veg Meals","Kids Meals","Other Preferences"],
+      data: (rows as MealRow[]).map((r) => [r.fullName, r.whatsapp, String(r.vegMeals), String(r.nonVegMeals), String(r.kidsMeals), r.otherPreferences]),
+    };
   }
-  // children
-  const headers = ["Full Name","WhatsApp","Children Under 12","Children 12+","Total Children","Notes"];
-  const data = (rows as ChildrenRow[]).map((r) => [r.fullName, r.whatsapp, String(r.under7), String(r.over7), String(r.total), r.notes]);
+  return {
+    headers: ["Full Name","WhatsApp","Children Under 12","Children 12+","Total Children","Notes"],
+    data: (rows as ChildrenRow[]).map((r) => [r.fullName, r.whatsapp, String(r.under7), String(r.over7), String(r.total), r.notes]),
+  };
+}
+
+function buildCSV(type: ReportType, rows: AnyRow[]): string {
+  const { headers, data } = buildTableData(type, rows);
   return toCSV(headers, data);
 }
 
@@ -292,11 +323,29 @@ export default function ReportPage() {
   const activeError  = tabError[activeType];
   const activeSearch = searchByType[activeType];
 
-  const handleExport = () => {
+  const safeName = () => (eventTitle || eventId).replace(/[^a-z0-9]/gi, "_").toLowerCase();
+
+  const handleExportCSV = () => {
     if (!activeRows) return;
     const csv = buildCSV(activeType, activeRows);
-    const safeName = (eventTitle || eventId).replace(/[^a-z0-9]/gi, "_").toLowerCase();
-    downloadCSV(`${safeName}_${activeType}_report.csv`, csv);
+    downloadCSV(`${safeName()}_${activeType}_report.csv`, csv);
+  };
+
+  const handleExportExcel = () => {
+    if (!activeRows) return;
+    const { headers, data } = buildTableData(activeType, activeRows);
+    downloadExcel(`${safeName()}_${activeType}_report.xlsx`, headers, data);
+  };
+
+  const handleExportPDF = () => {
+    if (!activeRows) return;
+    const { headers, data } = buildTableData(activeType, activeRows);
+    downloadPDF(
+      `${safeName()}_${activeType}_report.pdf`,
+      `${eventTitle ? eventTitle + " — " : ""}${REPORT_META[activeType].title}`,
+      headers,
+      data
+    );
   };
 
   return (
@@ -331,14 +380,34 @@ export default function ReportPage() {
       {/* Per-tab header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <h1 className="text-xl font-bold">{REPORT_META[activeType].title}</h1>
-        <Button
-          onClick={handleExport}
-          disabled={isLoading || !activeRows || activeRows.length === 0}
-          size="sm"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleExportCSV}
+            disabled={isLoading || !activeRows || activeRows.length === 0}
+            size="sm"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            CSV
+          </Button>
+          <Button
+            onClick={handleExportExcel}
+            disabled={isLoading || !activeRows || activeRows.length === 0}
+            size="sm"
+            variant="outline"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Excel
+          </Button>
+          <Button
+            onClick={handleExportPDF}
+            disabled={isLoading || !activeRows || activeRows.length === 0}
+            size="sm"
+            variant="outline"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            PDF
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
