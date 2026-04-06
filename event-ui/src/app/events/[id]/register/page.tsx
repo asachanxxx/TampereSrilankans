@@ -393,10 +393,9 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={isGuest ? (e) => setField("email", e.target.value) : undefined}
-                      disabled={!isGuest || loading}
-                      className={!isGuest ? "bg-muted cursor-not-allowed" : ""}
-                      placeholder={isGuest ? "your@email.com" : undefined}
+                      onChange={(e) => setField("email", e.target.value)}
+                      disabled={loading}
+                      placeholder="your@email.com"
                       required
                     />
                   </div>
