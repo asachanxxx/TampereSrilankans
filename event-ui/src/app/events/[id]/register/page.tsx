@@ -550,7 +550,8 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                 </div>
               </section>
 
-              {/* Meal Preferences */}
+              {/* Meal Preferences — hidden, defaults (0) submitted silently */}
+              {false && (
               <section className="space-y-4">
                 <div className="border-l-4 border-amber-500 pl-4">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -606,6 +607,7 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                   />
                 </div>
               </section>
+              )}
 
               {/* Consent */}
               <section className="space-y-4">
