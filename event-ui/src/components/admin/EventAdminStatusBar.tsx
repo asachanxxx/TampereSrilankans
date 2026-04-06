@@ -99,6 +99,20 @@ export function EventAdminStatusBar({ eventId }: Props) {
 
   return (
     <div className="border-b bg-muted/30 px-4 py-3 space-y-3">
+      {/* Headcount + Children Breakdown */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Headcount</p>
+        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+          <StatTile label="Total Adults" value={attendeeStats.adults} color="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300" />
+          <StatTile label="Total Children" value={attendeeStats.children} color="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" />
+          <StatTile label="Total Headcount" value={attendeeStats.headCount} color="bg-muted text-foreground" />
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <StatTile label="Under 7" value={attendeeStats.childrenUnder7} color="bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" />
+          <StatTile label="Over 7" value={attendeeStats.childrenOver7} color="bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" />
+        </div>
+      </div>
+
       {/* Ticket stats */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Tickets</p>
@@ -111,16 +125,6 @@ export function EventAdminStatusBar({ eventId }: Props) {
         </div>
       </div>
 
-      {/* Headcount */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Headcount</p>
-        <div className="grid grid-cols-3 gap-1.5">
-          <StatTile label="Total Adults" value={attendeeStats.adults} color="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300" />
-          <StatTile label="Total Children" value={attendeeStats.children} color="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" />
-          <StatTile label="Total Headcount" value={attendeeStats.headCount} color="bg-muted text-foreground" />
-        </div>
-      </div>
-
       {/* Attendee stats */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Attendees</p>
@@ -130,16 +134,6 @@ export function EventAdminStatusBar({ eventId }: Props) {
           <StatTile label="Non-Veg" value={attendeeStats.nonVegMeals} color="bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" />
           <StatTile label="Kids Meals" value={attendeeStats.kidsMeals} color="bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300" />
           <StatTile label="Children" value={attendeeStats.children} color="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" />
-        </div>
-      </div>
-
-      {/* Children breakdown */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Children Breakdown</p>
-        <div className="grid grid-cols-3 gap-1.5">
-          <StatTile label="Under 7" value={attendeeStats.childrenUnder7} color="bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" />
-          <StatTile label="Over 7" value={attendeeStats.childrenOver7} color="bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" />
-          <StatTile label="Total Children" value={attendeeStats.children} color="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" />
         </div>
       </div>
     </div>
