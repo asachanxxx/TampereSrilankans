@@ -304,16 +304,13 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle>{event?.title} Registration</CardTitle>
-            <CardDescription>
-              {isGuest ? (
-                <>Register without an account for{" "}
-                  <span className="font-medium text-foreground">{event.title}</span>.
-                </>
-              ) : (
-                <>Complete the form below to register for{" "}
-                  <span className="font-medium text-foreground">{event.title}</span>
-                </>
-              )}
+            <CardDescription asChild>
+              <div>
+                <p className="whitespace-pre-line text-sm text-muted-foreground">{event.description}</p>
+                {isGuest && (
+                  <p className="mt-2 text-xs text-muted-foreground italic">Registering as guest — no account required.</p>
+                )}
+              </div>
             </CardDescription>
           </CardHeader>
 

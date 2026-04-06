@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventDetailHeader } from "@/components/events/EventDetailHeader";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import type { Event, EventStatusId } from "@/models/event";
 import { allStatuses } from "@/lib/lookups";
@@ -40,7 +41,11 @@ export default function AdminEventDetailPage({ params }: { params: { id: string 
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusSaved, setStatusSaved] = useState(false);
   const [statusError, setStatusError] = useState("");
-
+  // Description edit state
+  const [editDesc, setEditDesc] = useState("");
+  const [descSaving, setDescSaving] = useState(false);
+  const [descSaved, setDescSaved] = useState(false);
+  const [descError, setDescError] = useState("");
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
       .then((r) => {
@@ -51,11 +56,35 @@ export default function AdminEventDetailPage({ params }: { params: { id: string 
         if (data) {
           setEvent(data.event);
           setSelectedStatus(data.event.statusId);
+          setEditDesc(data.event.description ?? "");
         }
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [params.id]);
+
+  async function handleDescSave() {
+    if (!event) return;
+    setDescSaving(true);
+    setDescSaved(false);
+    setDescError("");
+    try {
+      const res = await fetch(`/api/events/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: editDesc }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to save description");
+      setEvent((prev) => prev ? { ...prev, description: editDesc } : prev);
+      setDescSaved(true);
+      setTimeout(() => setDescSaved(false), 3000);
+    } catch (err: any) {
+      setDescError(err.message || "Something went wrong");
+    } finally {
+      setDescSaving(false);
+    }
+  }
 
   async function handleStatusUpdate() {
     if (!event || !selectedStatus || selectedStatus === event.statusId) return;
@@ -202,11 +231,41 @@ export default function AdminEventDetailPage({ params }: { params: { id: string 
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-6">
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-muted-foreground whitespace-pre-line">
-              {event.description}
-            </p>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Description</h3>
+            <Textarea
+              value={editDesc}
+              onChange={(e) => { setEditDesc(e.target.value); setDescSaved(false); setDescError(""); }}
+              rows={10}
+              className="whitespace-pre-line font-sans text-sm"
+              disabled={descSaving}
+              placeholder="Enter event description..."
+            />
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                onClick={handleDescSave}
+                disabled={descSaving || editDesc === event.description}
+              >
+                {descSaving ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
+                ) : (
+                  "Save Description"
+                )}
+              </Button>
+              {descSaved && (
+                <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Saved
+                </span>
+              )}
+            </div>
+            {descError && (
+              <Alert variant="destructive" className="py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{descError}</AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
