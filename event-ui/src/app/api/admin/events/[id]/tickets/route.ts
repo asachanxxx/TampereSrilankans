@@ -21,26 +21,31 @@ export async function GET(
 
     const tickets = await repo.getEventTickets(params.id);
 
-    // Enrich with whatsapp numbers from event_registrations
+    // Enrich with whatsapp numbers and registration details from event_registrations
     const { data: regs } = await supabase
       .from('event_registrations')
-      .select('user_id, email, whatsapp_number')
+      .select('user_id, email, whatsapp_number, spouse_name, children_over_7_count')
       .eq('event_id', params.id);
 
-    const regByUserId = new Map<string, string>();
-    const regByEmail = new Map<string, string>();
-    (regs ?? []).forEach((r: any) => {
-      if (r.user_id && r.whatsapp_number) regByUserId.set(r.user_id, r.whatsapp_number);
-      if (r.email && r.whatsapp_number) regByEmail.set(r.email.toLowerCase(), r.whatsapp_number);
+    type RegRecord = { user_id: string | null; email: string; whatsapp_number: string | null; spouse_name: string | null; children_over_7_count: number | null };
+    const regByUserId = new Map<string, RegRecord>();
+    const regByEmail = new Map<string, RegRecord>();
+    (regs ?? []).forEach((r: RegRecord) => {
+      if (r.user_id) regByUserId.set(r.user_id, r);
+      if (r.email) regByEmail.set(r.email.toLowerCase(), r);
     });
 
-    const enriched = tickets.map((t) => ({
-      ...t,
-      whatsappNumber:
+    const enriched = tickets.map((t) => {
+      const reg =
         (t.userId ? regByUserId.get(t.userId) : undefined) ??
-        regByEmail.get(t.issuedToEmail.toLowerCase()) ??
-        null,
-    }));
+        regByEmail.get(t.issuedToEmail.toLowerCase());
+      return {
+        ...t,
+        whatsappNumber: reg?.whatsapp_number ?? null,
+        spouseName: reg?.spouse_name ?? null,
+        childrenOver7Count: reg?.children_over_7_count ?? 0,
+      };
+    });
 
     return NextResponse.json({ tickets: enriched }, { status: 200 });
   } catch (error: any) {

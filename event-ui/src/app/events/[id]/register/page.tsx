@@ -28,9 +28,10 @@ import type { Event } from "@/models/event";
 export default function EventRegisterPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isGuest = searchParams.get("guest") === "true";
+  const guestParam = searchParams.get("guest") === "true";
 
   const { currentUser } = useSession();
+  const isGuest = guestParam || !currentUser;
   const [event, setEvent] = useState<Event | null>(null);
   const [eventLoading, setEventLoading] = useState(true);
   const [eventNotFound, setEventNotFound] = useState(false);

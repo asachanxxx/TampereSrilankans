@@ -62,4 +62,8 @@ export type Ticket = {
   boardedById: string | null;
   /** WhatsApp number from the linked registration — enriched by the tickets API */
   whatsappNumber?: string | null;
+  /** Spouse name from the linked registration — enriched by the tickets API */
+  spouseName?: string | null;
+  /** Children over 7 count from the linked registration — enriched by the tickets API */
+  childrenOver7Count?: number;
 };

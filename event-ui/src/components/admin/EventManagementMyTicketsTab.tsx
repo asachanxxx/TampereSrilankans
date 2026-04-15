@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Phone,
   MessageCircle,
+  Users,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -292,6 +293,17 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                           {ticket.whatsappNumber}
                         </div>
                       )}
+                      {ticket.spouseName && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                          <Users className="h-3 w-3" />
+                          Spouse: {ticket.spouseName}
+                        </div>
+                      )}
+                      {(ticket.childrenOver7Count ?? 0) > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Children (7+): {ticket.childrenOver7Count}
+                        </div>
+                      )}
                     </div>
                     <Badge variant="outline" className={`text-xs shrink-0 ${stageStyle[stage]}`}>
                       {stageLabel}
@@ -327,6 +339,16 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                       <TicketIcon className="h-4 w-4" />
                       Show Ticket
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handlePreview(ticket.id)}
+                      disabled={previewLoading === ticket.id}
+                      className="gap-1.5 text-muted-foreground"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Preview Message
+                    </Button>
                     {ticket.whatsappNumber && (
                       <a
                         href={`https://wa.me/${ticket.whatsappNumber.replace(/\D/g, '')}`}
@@ -339,16 +361,6 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                         </Button>
                       </a>
                     )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handlePreview(ticket.id)}
-                      disabled={previewLoading === ticket.id}
-                      className="gap-1.5 text-muted-foreground"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Preview Message
-                    </Button>
                     {stage === "assigned" && (
                       <Button
                         size="sm"
