@@ -73,4 +73,8 @@ export type EventPaymentInstructions = {
   paymentDeadlineDays: number;
   /** Additional free-text note included at the bottom of the payment message */
   notes?: string;
+  /** Ticket price per adult (e.g. 9 for EUR 9.00). Used to compute payment breakdown. */
+  adultTicketPrice?: number;
+  /** Ticket price per child over 7 (e.g. 6 for EUR 6.00). Used to compute payment breakdown. */
+  childTicketPrice?: number;
 };

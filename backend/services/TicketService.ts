@@ -2,7 +2,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Ticket } from '../../event-ui/src/models/ticket';
 import { EventPaymentInstructions } from '../../event-ui/src/models/event';
 import { AppUser } from '../../event-ui/src/models/user';
+import { Registration } from '../../event-ui/src/models/registration';
 import { TicketRepository } from '../repositories/TicketRepository';
+import { RegistrationRepository } from '../repositories/RegistrationRepository';
 import { RegistrationValidator } from '../validators/RegistrationValidator';
 import { requireAuth, isAdmin, isOrganizer, AuthorizationError } from '../policies/accessControl';
 import { TemplateService, TemplateData } from './TemplateService';
@@ -12,9 +14,11 @@ import { TemplateService, TemplateData } from './TemplateService';
  */
 export class TicketService {
   private ticketRepo: TicketRepository;
+  private registrationRepo: RegistrationRepository;
 
   constructor(private supabase: SupabaseClient) {
     this.ticketRepo = new TicketRepository(supabase);
+    this.registrationRepo = new RegistrationRepository(supabase);
   }
 
   /**
@@ -202,6 +206,13 @@ export class TicketService {
       eventRow?.payment_instructions ?? null;
     const hasInstructions = instructions !== null;
 
+    // Fetch registration to get adult/child counts for price breakdown
+    const registration = await this.registrationRepo.getRegistrationForTicket(
+      updatedTicket.userId,
+      updatedTicket.issuedToEmail,
+      updatedTicket.eventId
+    );
+
     // Build template data
     const templateData: TemplateData = {
       display_name: updatedTicket.issuedToName,
@@ -224,6 +235,7 @@ export class TicketService {
         ? instructions!.referenceFormat.replace('{ticket_number}', updatedTicket.ticketNumber)
         : updatedTicket.ticketNumber,
       notes: instructions?.notes,
+      payment_breakdown: buildPaymentBreakdown(registration, instructions),
     };
 
     const templateKey = hasInstructions
@@ -273,6 +285,13 @@ export class TicketService {
       eventRow?.payment_instructions ?? null;
     const hasInstructions = instructions !== null;
 
+    // Fetch registration to get adult/child counts for price breakdown
+    const registration = await this.registrationRepo.getRegistrationForTicket(
+      ticket.userId,
+      ticket.issuedToEmail,
+      ticket.eventId
+    );
+
     const templateData: TemplateData = {
       display_name: ticket.issuedToName,
       event_name: eventRow?.title ?? 'Event',
@@ -294,6 +313,7 @@ export class TicketService {
         ? instructions!.referenceFormat.replace('{ticket_number}', ticket.ticketNumber)
         : ticket.ticketNumber,
       notes: instructions?.notes,
+      payment_breakdown: buildPaymentBreakdown(registration, instructions),
     };
 
     const templateKey = hasInstructions ? 'payment_reminder' : 'payment_no_instructions';
@@ -368,6 +388,48 @@ export class TicketService {
 
     return this.ticketRepo.markBoarded(ticketId, boardedById);
   }
-
 }
 
+// ---------------------------------------------------------------------------
+// Helper: build payment breakdown string
+// ---------------------------------------------------------------------------
+
+function buildPaymentBreakdown(
+  registration: Registration | null,
+  instructions: EventPaymentInstructions | null
+): string | undefined {
+  if (!instructions || !registration) return undefined;
+
+  const adultPrice = instructions.adultTicketPrice;
+  const childPrice = instructions.childTicketPrice;
+  if (adultPrice === undefined && childPrice === undefined) return undefined;
+
+  const currency = instructions.currency ?? 'EUR';
+  const adultCount = 1 + (registration.spouseName?.trim() ? 1 : 0);
+  const childCount = registration.childrenOver7Count ?? 0;
+
+  const lines: string[] = [];
+
+  if (adultPrice !== undefined) {
+    const adultTotal = adultPrice * adultCount;
+    lines.push(`Adult x ${adultCount} = ${currency} ${adultTotal.toFixed(2)}`);
+  }
+
+  if (childPrice !== undefined && childCount > 0) {
+    const childTotal = childPrice * childCount;
+    lines.push(`Over 7 x ${childCount} = ${currency} ${childTotal.toFixed(2)}`);
+  } else if (childPrice !== undefined && childCount === 0) {
+    lines.push(`Over 7 x 0 = ${currency} 0.00`);
+  }
+
+  const total =
+    (adultPrice !== undefined ? adultPrice * adultCount : 0) +
+    (childPrice !== undefined ? childPrice * childCount : 0);
+  lines.push(`Total = ${currency} ${total.toFixed(2)}`);
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// End of TicketService module
+// ---------------------------------------------------------------------------

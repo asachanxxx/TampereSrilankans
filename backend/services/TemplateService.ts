@@ -17,6 +17,8 @@ export interface TemplateData {
   account_holder?: string;
   reference?: string;
   notes?: string;
+  /** Pre-rendered payment breakdown lines, e.g. "Adult x 2 = EUR 18.00\nOver 7 x 1 = EUR 6.00\nTotal = EUR 24.00" */
+  payment_breakdown?: string;
 }
 
 interface RawTemplate {
@@ -70,11 +72,19 @@ export class TemplateService {
       ? `\nNote: ${data.notes}\n`
       : '';
 
-    const substituted = this.substitute(tpl.body, { ...data, notes_block: notesBlock });
+    const substituted = this.substitute(tpl.body, {
+      ...data,
+      notes_block: notesBlock,
+      payment_breakdown: data.payment_breakdown ?? '',
+    });
     const result: RenderedMessage = { body: substituted };
 
     if (tpl.subject) {
-      result.subject = this.substitute(tpl.subject, { ...data, notes_block: notesBlock });
+      result.subject = this.substitute(tpl.subject, {
+        ...data,
+        notes_block: notesBlock,
+        payment_breakdown: data.payment_breakdown ?? '',
+      });
     }
 
     return result;

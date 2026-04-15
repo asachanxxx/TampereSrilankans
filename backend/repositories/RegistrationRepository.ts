@@ -212,6 +212,34 @@ export class RegistrationRepository {
   }
 
   /**
+   * Get registration linked to a ticket (by userId+eventId for authenticated, email+eventId for guests).
+   * Returns null if not found — callers should handle gracefully.
+   */
+  async getRegistrationForTicket(
+    userId: string | null,
+    email: string,
+    eventId: string
+  ): Promise<Registration | null> {
+    let query = this.supabase
+      .from('event_registrations')
+      .select('*')
+      .eq('event_id', eventId);
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      query = query.is('user_id', null).eq('email', email);
+    }
+
+    const { data, error } = await query.limit(1).single();
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data ? this.mapToRegistration(data) : null;
+  }
+
+  /**
    * Get registration by ID
    */
   async getRegistrationById(registrationId: string): Promise<Registration | null> {
