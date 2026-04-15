@@ -16,6 +16,8 @@ import {
   Ticket as TicketIcon,
   Eye,
   RefreshCw,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -284,6 +286,12 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                         <Mail className="h-3 w-3" />
                         {ticket.issuedToEmail}
                       </div>
+                      {ticket.whatsappNumber && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                          <Phone className="h-3 w-3" />
+                          {ticket.whatsappNumber}
+                        </div>
+                      )}
                     </div>
                     <Badge variant="outline" className={`text-xs shrink-0 ${stageStyle[stage]}`}>
                       {stageLabel}
@@ -319,6 +327,18 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId }: Props) {
                       <TicketIcon className="h-4 w-4" />
                       Show Ticket
                     </Button>
+                    {ticket.whatsappNumber && (
+                      <a
+                        href={`https://wa.me/${ticket.whatsappNumber.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="outline" className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
+                          <MessageCircle className="h-4 w-4" />
+                          WhatsApp
+                        </Button>
+                      </a>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"

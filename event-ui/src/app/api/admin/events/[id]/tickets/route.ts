@@ -21,7 +21,28 @@ export async function GET(
 
     const tickets = await repo.getEventTickets(params.id);
 
-    return NextResponse.json({ tickets }, { status: 200 });
+    // Enrich with whatsapp numbers from event_registrations
+    const { data: regs } = await supabase
+      .from('event_registrations')
+      .select('user_id, email, whatsapp_number')
+      .eq('event_id', params.id);
+
+    const regByUserId = new Map<string, string>();
+    const regByEmail = new Map<string, string>();
+    (regs ?? []).forEach((r: any) => {
+      if (r.user_id && r.whatsapp_number) regByUserId.set(r.user_id, r.whatsapp_number);
+      if (r.email && r.whatsapp_number) regByEmail.set(r.email.toLowerCase(), r.whatsapp_number);
+    });
+
+    const enriched = tickets.map((t) => ({
+      ...t,
+      whatsappNumber:
+        (t.userId ? regByUserId.get(t.userId) : undefined) ??
+        regByEmail.get(t.issuedToEmail.toLowerCase()) ??
+        null,
+    }));
+
+    return NextResponse.json({ tickets: enriched }, { status: 200 });
   } catch (error: any) {
     console.error('GET /api/admin/events/[id]/tickets error:', error);
     const status =

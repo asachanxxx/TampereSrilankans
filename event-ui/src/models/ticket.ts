@@ -60,4 +60,6 @@ export type Ticket = {
   boardedAt: string | null;
   /** ID of the staff member who scanned/boarded the attendee */
   boardedById: string | null;
+  /** WhatsApp number from the linked registration — enriched by the tickets API */
+  whatsappNumber?: string | null;
 };
