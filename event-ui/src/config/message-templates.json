@@ -2,13 +2,13 @@
     {
         "template_key": "payment_reminder_whatsapp",
         "channel": "whatsapp",
-        "body": "🎉 Event Payment Details\n\nHi! 👋\nThank you for registering for our upcoming event 🙌\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
+        "body": "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi! 👋\nThank you for registering for our upcoming event 🙌\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
     },
     {
         "template_key": "payment_reminder_email",
         "channel": "email",
         "subject": "Payment details for {{event_name}} — ticket {{ticket_number}}",
-        "body": "🎉 Event Payment Details\n\nHi {{display_name}}! 👋\nThank you for registering for {{event_name}} 🙌\n\nYour ticket number is *{{ticket_number}}*.\n\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
+        "body": "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi {{display_name}}! 👋\nThank you for registering for {{event_name}} 🙌\n\nYour ticket number is *{{ticket_number}}*.\n\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
     },
     {
         "template_key": "payment_no_instructions_whatsapp",
