@@ -43,7 +43,7 @@ export default function AdminLayoutWrapper({
 
   // Redirect if not authenticated
   if (authStatus === "anonymous" || !profile) {
-    redirect("/not-authorized");
+    redirect("/");
   }
 
   // Gate: staff-allowed paths require organizer+; all other paths require admin
