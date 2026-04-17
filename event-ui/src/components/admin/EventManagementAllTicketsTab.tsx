@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
+import { type EventPaymentInstructions } from "@/models/event";
 import ticketStatuses from "@/config/ticket-statuses.json";
 import { TicketAssignDropdown } from "./TicketAssignDropdown";
 import { TicketStatusControl } from "./TicketStatusControl";
@@ -27,6 +28,23 @@ import { TicketViewDialog } from "./TicketViewDialog";
 
 interface Props {
   eventId: string;
+  paymentInstructions?: EventPaymentInstructions | null;
+}
+
+function calcTicketPrice(
+  ticket: TicketModel,
+  instructions?: EventPaymentInstructions | null
+): string | null {
+  if (!instructions) return null;
+  const { adultTicketPrice, childTicketPrice, currency } = instructions;
+  if (adultTicketPrice === undefined && childTicketPrice === undefined) return null;
+  const cur = currency ?? 'EUR';
+  const adultCount = 1 + (ticket.spouseName?.trim() ? 1 : 0);
+  const childCount = ticket.childrenOver7Count ?? 0;
+  const total =
+    (adultTicketPrice ?? 0) * adultCount +
+    (childTicketPrice ?? 0) * childCount;
+  return `${cur} ${total.toFixed(2)}`;
 }
 
 const STAGES: { id: TicketStage | "all"; label: string }[] = [
@@ -59,7 +77,7 @@ function getStageLabel(stage: TicketStage): string {
   return ticketStatuses.find((s) => s.id === stage)?.label ?? stage;
 }
 
-export function EventManagementAllTicketsTab({ eventId }: Props) {
+export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: Props) {
   const [tickets, setTickets] = useState<TicketModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -194,7 +212,7 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
             return (
               <Card key={ticket.id}>
                 <CardContent className="p-3 space-y-2">
-                  {/* Row 1: stage | name + ticket# + email | actions */}
+                  {/* Row 1: stage | name + ticket# + email | price | actions */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex items-center gap-2">
                       <Badge variant="outline" className={`text-xs shrink-0 ${stageStyle[stage]}`}>
@@ -210,8 +228,17 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <Button
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {(() => {
+                        const price = calcTicketPrice(ticket, paymentInstructions);
+                        return price ? (
+                          <span className="text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
+                            {price}
+                          </span>
+                        ) : null;
+                      })()}
+                      <div className="flex items-center gap-0.5">
+                        <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground"
@@ -239,6 +266,7 @@ export function EventManagementAllTicketsTab({ eventId }: Props) {
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      </div>
                     </div>
                   </div>
 

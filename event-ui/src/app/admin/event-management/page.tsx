@@ -80,7 +80,7 @@ export default function EventManagementPage() {
             </TabsContent>
 
             <TabsContent value="tickets">
-              <EventManagementAllTicketsTab eventId={selectedEvent.id} />
+              <EventManagementAllTicketsTab eventId={selectedEvent.id} paymentInstructions={selectedEvent.paymentInstructions} />
             </TabsContent>
           </Tabs>
         ) : (
