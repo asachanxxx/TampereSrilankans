@@ -95,6 +95,7 @@ export default function EventManagementPage() {
               <EventManagementMyTicketsTab
                 eventId={selectedEvent.id}
                 currentUserId={profile.id}
+                paymentInstructions={selectedEvent.paymentInstructions}
               />
             </TabsContent>
 
