@@ -158,6 +158,7 @@ export class EventRepository {
       aboutSectionTitle: row.about_section_title,
       organizerName: row.organizer_name,
       createdAt: row.created_at,
+      paymentInstructions: row.payment_instructions ?? null,
     };
   }
 
