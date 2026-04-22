@@ -329,6 +329,67 @@ export class TicketService {
   }
 
   /**
+   * Preview a repeat payment reminder message for a ticket (does NOT change ticket state).
+   * Uses the payment_repeat_reminder template instead of the initial payment_reminder.
+   */
+  async previewReminderMessage(
+    ticketId: string,
+    actor: AppUser | null
+  ): Promise<{ whatsappMessage: string; emailMessage: string; emailSubject: string }> {
+    requireAuth(actor);
+    if (!isOrganizer(actor)) {
+      throw new AuthorizationError('Only organizers, moderators, and admins can preview reminder messages');
+    }
+
+    const ticket = await this.ticketRepo.getTicketById(ticketId);
+    if (!ticket) throw new Error('Ticket not found');
+
+    const { data: eventRow, error: eventError } = await this.supabase
+      .from('events')
+      .select('title, payment_instructions')
+      .eq('id', ticket.eventId)
+      .single();
+    if (eventError) throw eventError;
+
+    const instructions: EventPaymentInstructions | null =
+      eventRow?.payment_instructions ?? null;
+
+    const registration = await this.registrationRepo.getRegistrationForTicket(
+      ticket.userId,
+      ticket.issuedToEmail,
+      ticket.eventId
+    );
+
+    const templateData: TemplateData = {
+      display_name: ticket.issuedToName,
+      event_name: eventRow?.title ?? 'Event',
+      ticket_number: ticket.ticketNumber,
+      amount: instructions
+        ? `${instructions.currency} ${instructions.amountPerPerson.toFixed(2)}`
+        : '',
+      due_date: '',
+      bank_name: instructions?.bankName,
+      iban: instructions?.iban,
+      account_holder: instructions?.accountHolder,
+      reference: instructions?.referenceFormat
+        ? instructions.referenceFormat.replace('{ticket_number}', ticket.ticketNumber)
+        : ticket.ticketNumber,
+      notes: instructions?.notes,
+      payment_breakdown: buildPaymentBreakdown(registration, instructions),
+    };
+
+    const templateService = new TemplateService();
+    const whatsapp = templateService.render('payment_repeat_reminder_whatsapp', 'whatsapp', templateData);
+    const email = templateService.render('payment_repeat_reminder_email', 'email', templateData);
+
+    return {
+      whatsappMessage: whatsapp.body,
+      emailMessage: email.body,
+      emailSubject: email.subject ?? `Payment Reminder for ${templateData.event_name}`,
+    };
+  }
+
+  /**
    * Confirm that the attendee has paid (manual confirmation by staff).
    *
    * Rules:

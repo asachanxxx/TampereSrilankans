@@ -15,6 +15,7 @@ import {
   Pencil,
   Eye,
   RefreshCw,
+  BellRing,
 } from "lucide-react";
 import { formatDateShort } from "@/lib/format";
 import { type Ticket as TicketModel, type TicketStage, deriveTicketStage } from "@/models/ticket";
@@ -89,20 +90,42 @@ export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: P
     whatsappMessage: string;
     emailMessage: string;
     emailSubject: string;
+    whatsappNumber?: string | null;
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [reminderMessages, setReminderMessages] = useState<{
+    whatsappMessage: string;
+    emailMessage: string;
+    emailSubject: string;
+    whatsappNumber?: string | null;
+  } | null>(null);
+  const [reminderLoading, setReminderLoading] = useState<string | null>(null);
 
-  const handlePreview = async (ticketId: string) => {
+  const handlePreview = async (ticketId: string, whatsappNumber?: string | null) => {
     setPreviewLoading(ticketId);
     try {
       const res = await fetch(`/api/tickets/${ticketId}/payment-preview`);
       if (!res.ok) throw new Error((await res.json()).error || "Failed");
       const data = await res.json();
-      setPaymentMessages(data);
+      setPaymentMessages({ ...data, whatsappNumber });
     } catch (e: any) {
       alert(e.message);
     } finally {
       setPreviewLoading(null);
+    }
+  };
+
+  const handleReminder = async (ticketId: string, whatsappNumber?: string | null) => {
+    setReminderLoading(ticketId);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/reminder-preview`);
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const data = await res.json();
+      setReminderMessages({ ...data, whatsappNumber });
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setReminderLoading(null);
     }
   };
 
@@ -253,7 +276,7 @@ export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: P
                         className="h-7 w-7 text-muted-foreground"
                         title="Preview payment message"
                         disabled={previewLoading === ticket.id}
-                        onClick={() => handlePreview(ticket.id)}
+                        onClick={() => handlePreview(ticket.id, ticket.whatsappNumber)}
                       >
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
@@ -266,6 +289,18 @@ export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: P
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      {deriveTicketStage(ticket) === "payment_sent" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-amber-600"
+                          title="Send payment reminder"
+                          disabled={reminderLoading === ticket.id}
+                          onClick={() => handleReminder(ticket.id, ticket.whatsappNumber)}
+                        >
+                          <BellRing className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       </div>
                     </div>
                   </div>
@@ -334,8 +369,21 @@ export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: P
           whatsappMessage={paymentMessages.whatsappMessage}
           emailMessage={paymentMessages.emailMessage}
           emailSubject={paymentMessages.emailSubject}
+          whatsappNumber={paymentMessages.whatsappNumber}
           open={!!paymentMessages}
           onClose={() => setPaymentMessages(null)}
+        />
+      )}
+
+      {reminderMessages && (
+        <PaymentMessageDialog
+          title="Payment Reminder"
+          whatsappMessage={reminderMessages.whatsappMessage}
+          emailMessage={reminderMessages.emailMessage}
+          emailSubject={reminderMessages.emailSubject}
+          whatsappNumber={reminderMessages.whatsappNumber}
+          open={!!reminderMessages}
+          onClose={() => setReminderMessages(null)}
         />
       )}
     </div>

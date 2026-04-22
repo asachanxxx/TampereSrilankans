@@ -16,17 +16,21 @@ import { Check, Copy, MessageCircle, Mail } from "lucide-react";
 type Channel = "whatsapp" | "email";
 
 type Props = {
+  title?: string;
   whatsappMessage: string;
   emailMessage: string;
   emailSubject: string;
+  whatsappNumber?: string | null;
   open: boolean;
   onClose: () => void;
 };
 
 export function PaymentMessageDialog({
+  title = "Payment Message",
   whatsappMessage,
   emailMessage,
   emailSubject,
+  whatsappNumber,
   open,
   onClose,
 }: Props) {
@@ -73,7 +77,7 @@ export function PaymentMessageDialog({
     >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Payment Message</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         {/* Channel tabs */}
@@ -138,6 +142,18 @@ export function PaymentMessageDialog({
               </>
             )}
           </Button>
+          {whatsappNumber && channel === "whatsapp" && (
+            <a
+              href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </Button>
+            </a>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
