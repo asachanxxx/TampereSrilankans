@@ -29,6 +29,7 @@ const adminNavItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/events", icon: Calendar, label: "Events" },
   { href: "/admin/event-management", icon: ClipboardList, label: "Event Mgmt" },
+  { href: "/admin/check-in", icon: ScanLine, label: "Check-in" },
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/permissions", icon: Lock, label: "Permissions" },
   { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },

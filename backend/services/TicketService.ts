@@ -3,7 +3,7 @@ import { Ticket } from '../../event-ui/src/models/ticket';
 import { EventPaymentInstructions } from '../../event-ui/src/models/event';
 import { AppUser } from '../../event-ui/src/models/user';
 import { Registration } from '../../event-ui/src/models/registration';
-import { TicketRepository } from '../repositories/TicketRepository';
+import { TicketRepository, SearchTicketResult } from '../repositories/TicketRepository';
 import { RegistrationRepository } from '../repositories/RegistrationRepository';
 import { RegistrationValidator } from '../validators/RegistrationValidator';
 import { requireAuth, isAdmin, isOrganizer, AuthorizationError } from '../policies/accessControl';
@@ -443,11 +443,26 @@ export class TicketService {
     if (ticket.boardingStatus === 'boarded') {
       throw new Error('Ticket has already been boarded');
     }
-    if (ticket.paymentStatus !== 'paid') {
+    if (ticket.paymentStatus !== 'paid' && !isAdmin(actor)) {
       throw new Error('Only paid tickets can be boarded');
     }
 
     return this.ticketRepo.markBoarded(ticketId, boardedById);
+  }
+
+  /**
+   * Search tickets by name, email, ticket number, or phone number.
+   * Requires organizer / moderator / admin.
+   */
+  async searchTickets(
+    query: string,
+    actor: AppUser | null
+  ): Promise<SearchTicketResult[]> {
+    requireAuth(actor);
+    if (!isOrganizer(actor)) {
+      throw new AuthorizationError('Only organizers, moderators, and admins can search tickets');
+    }
+    return this.ticketRepo.searchTickets(query);
   }
 
   /**

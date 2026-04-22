@@ -2,6 +2,11 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Ticket } from '../../event-ui/src/models/ticket';
 import { randomUUID } from 'crypto';
 
+export type SearchTicketResult = {
+  ticket: Ticket;
+  eventTitle: string | null;
+};
+
 /**
  * TicketRepository - Data access layer for tickets table
  */
@@ -314,6 +319,54 @@ export class TicketRepository {
       // Reminder tracking
       reminderCount: row.reminder_count ?? 0,
     };
+  }
+
+  /**
+   * Search tickets by name, email, ticket number, or phone (whatsapp_number on registration).
+   * Returns up to 20 deduplicated results with event title.
+   */
+  async searchTickets(query: string): Promise<SearchTicketResult[]> {
+    const q = `%${query}%`;
+
+    // 1. Direct ticket field search
+    const { data: direct } = await this.supabase
+      .from('tickets')
+      .select('*, events(title)')
+      .or(`ticket_number.ilike.${q},issued_to_email.ilike.${q},issued_to_name.ilike.${q}`)
+      .limit(15);
+
+    // 2. Phone search via registrations → match tickets by email
+    const { data: regMatches } = await this.supabase
+      .from('event_registrations')
+      .select('email')
+      .ilike('whatsapp_number', q)
+      .limit(10);
+
+    const phones = [...new Set((regMatches ?? []).map((r: any) => r.email as string))];
+    let phoneRows: any[] = [];
+    if (phones.length > 0) {
+      const { data } = await this.supabase
+        .from('tickets')
+        .select('*, events(title)')
+        .in('issued_to_email', phones)
+        .limit(10);
+      phoneRows = data ?? [];
+    }
+
+    // Merge and deduplicate by ticket id
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const row of [...(direct ?? []), ...phoneRows]) {
+      if (!seen.has(row.id)) {
+        seen.add(row.id);
+        merged.push(row);
+      }
+    }
+
+    return merged.slice(0, 20).map((row) => ({
+      ticket: this.mapToTicket(row),
+      eventTitle: (row.events as any)?.title ?? null,
+    }));
   }
 
   async incrementReminderCount(ticketId: string): Promise<Ticket> {
