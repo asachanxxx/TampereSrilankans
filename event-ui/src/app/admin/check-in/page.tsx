@@ -36,6 +36,7 @@ type SearchItem = {
 export default function CheckInPage() {
   const { profile } = useSession();
   const isAdmin = profile?.role === "admin";
+  console.log('[check-in] page loaded, role:', profile?.role);
 
   const scannerRef = useRef<any>(null);
   const [scanning, setScanning] = useState(false);
