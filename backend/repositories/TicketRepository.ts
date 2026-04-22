@@ -311,6 +311,22 @@ export class TicketRepository {
       boardingStatus: row.boarding_status ?? null,
       boardedAt: row.boarded_at ?? null,
       boardedById: row.boarded_by_id ?? null,
+      // Reminder tracking
+      reminderCount: row.reminder_count ?? 0,
     };
+  }
+
+  async incrementReminderCount(ticketId: string): Promise<Ticket> {
+    // Read current count then write incremented value
+    const ticket = await this.getTicketById(ticketId);
+    if (!ticket) throw new Error('Ticket not found');
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({ reminder_count: ticket.reminderCount + 1 })
+      .eq('id', ticketId)
+      .select()
+      .single();
+    if (error) throw error;
+    return this.mapToTicket(data);
   }
 }

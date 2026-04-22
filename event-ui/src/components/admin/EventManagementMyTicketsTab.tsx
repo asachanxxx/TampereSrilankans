@@ -86,6 +86,7 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
     emailMessage: string;
     emailSubject: string;
     whatsappNumber?: string | null;
+    ticketId?: string;
   } | null>(null);
   const [reminderLoading, setReminderLoading] = useState<string | null>(null);
   const [viewTarget, setViewTarget] = useState<TicketModel | null>(null);
@@ -110,12 +111,23 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
       const res = await fetch(`/api/tickets/${ticketId}/reminder-preview`);
       if (!res.ok) throw new Error((await res.json()).error || "Failed");
       const data = await res.json();
-      setReminderMessages({ ...data, whatsappNumber });
+      setReminderMessages({ ...data, whatsappNumber, ticketId });
     } catch (e: any) {
       alert(e.message);
     } finally {
       setReminderLoading(null);
     }
+  };
+
+  const handleReminderSent = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/reminder-sent`, { method: 'POST' });
+      if (!res.ok) return;
+      const { reminderCount } = await res.json();
+      setTickets((prev) =>
+        prev.map((t) => t.id === ticketId ? { ...t, reminderCount } : t)
+      );
+    } catch {}
   };
 
   const load = () => {
@@ -432,7 +444,7 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
                           className="gap-1.5 text-amber-700 border-amber-300 hover:bg-amber-50"
                         >
                           <BellRing className="h-4 w-4" />
-                          Payment Reminder
+                          {ticket.reminderCount > 0 ? `Reminder (${ticket.reminderCount})` : 'Payment Reminder'}
                         </Button>
                         <Button
                           size="sm"
@@ -491,6 +503,7 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
           emailMessage={reminderMessages.emailMessage}
           emailSubject={reminderMessages.emailSubject}
           whatsappNumber={reminderMessages.whatsappNumber}
+          onReminderSent={reminderMessages.ticketId ? () => handleReminderSent(reminderMessages.ticketId!) : undefined}
           open={!!reminderMessages}
           onClose={() => setReminderMessages(null)}
         />

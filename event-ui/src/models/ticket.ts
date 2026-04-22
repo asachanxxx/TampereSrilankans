@@ -66,4 +66,6 @@ export type Ticket = {
   spouseName?: string | null;
   /** Children over 7 count from the linked registration — enriched by the tickets API */
   childrenOver7Count?: number;
+  /** Number of payment reminders sent for this ticket */
+  reminderCount: number;
 };

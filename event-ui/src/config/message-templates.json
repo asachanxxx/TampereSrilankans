@@ -1,35 +1,35 @@
 [
     {
-        "template_key": "payment_reminder_whatsapp",
-        "channel": "whatsapp",
-        "body": "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi! 👋\nThank you for registering for our upcoming event 🙌\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
+        "template_key":  "payment_reminder_whatsapp",
+        "channel":  "whatsapp",
+        "body":  "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi! 👋\nThank you for registering for our upcoming event 🙌\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
     },
     {
-        "template_key": "payment_reminder_email",
-        "channel": "email",
-        "subject": "Payment details for {{event_name}} — ticket {{ticket_number}}",
-        "body": "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi {{display_name}}! 👋\nThank you for registering for {{event_name}} 🙌\n\nYour ticket number is *{{ticket_number}}*.\n\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
+        "template_key":  "payment_reminder_email",
+        "channel":  "email",
+        "subject":  "Payment details for {{event_name}} — ticket {{ticket_number}}",
+        "body":  "🎉 {{event_name}} – Tampere 🎉\n🎉Event Payment Details🎉\n\nHi {{display_name}}! 👋\nThank you for registering for {{event_name}} 🙌\n\nYour ticket number is *{{ticket_number}}*.\n\nPlease complete your payment using the details below:\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nKindly make your payment at your earliest convenience. Your ticket will be confirmed once the payment is completed ✅\nLooking forward to seeing you there 😊\n\n🎟️ Registration still open!\nInvite your friends and let them register to join the event!"
     },
     {
-        "template_key": "payment_no_instructions_whatsapp",
-        "channel": "whatsapp",
-        "body": "Hi {{display_name}},\n\nYour ticket *{{ticket_number}}* for *{{event_name}}* has been confirmed.\n\nPlease contact the organiser for payment details.\n\nThank you!"
+        "template_key":  "payment_no_instructions_whatsapp",
+        "channel":  "whatsapp",
+        "body":  "Hi {{display_name}},\n\nYour ticket *{{ticket_number}}* for *{{event_name}}* has been confirmed.\n\nPlease contact the organiser for payment details.\n\nThank you!"
     },
     {
-        "template_key": "payment_no_instructions_email",
-        "channel": "email",
-        "subject": "Ticket confirmed for {{event_name}} — {{ticket_number}}",
-        "body": "Hi {{display_name}},\n\nYour ticket {{ticket_number}} for {{event_name}} has been confirmed.\n\nThe organiser will be in touch with payment details shortly.\n\nBest regards,\nThe Organising Team"
+        "template_key":  "payment_no_instructions_email",
+        "channel":  "email",
+        "subject":  "Ticket confirmed for {{event_name}} — {{ticket_number}}",
+        "body":  "Hi {{display_name}},\n\nYour ticket {{ticket_number}} for {{event_name}} has been confirmed.\n\nThe organiser will be in touch with payment details shortly.\n\nBest regards,\nThe Organising Team"
     },
     {
-        "template_key": "payment_repeat_reminder_whatsapp",
-        "channel": "whatsapp",
-        "body": "🔔 Payment Reminder – {{event_name}} – Tampere 🔔\n\nHi! 👋\nThis is a friendly reminder to complete your payment for the event 🙌\nWe have shared the payment details earlier, but our records show that the payment is still pending.\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\nKindly complete the payment as soon as possible to confirm your tickets ✅\n🎟️ Tickets are still open – feel free to invite your friends to register!\nThank you 😊"
+        "template_key":  "payment_repeat_reminder_whatsapp",
+        "channel":  "whatsapp",
+        "body":  "\ud83d\udd14 Payment Reminder \u2013 {{event_name}} \u2013 Tampere \ud83d\udd14\\n\\nHi! \ud83d\udc4b\\nThis is a friendly reminder to complete your payment for the event \ud83d\ude4c\\nWe have shared the payment details earlier, but our records show that the payment is still pending.\\n\\n\ud83d\udcdd Payment Reference:\\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\\n\\n\ud83d\udcb3 Payment Breakdown\\n{{payment_breakdown}}\\n\\nPayee Name: {{account_holder}}\\nIBAN: {{iban}}\\n\\nKindly complete the payment as soon as possible to confirm your tickets \u2705\\n\ud83c\udf9f\ufe0f Tickets are still open \u2013 feel free to invite your friends to register!\\nThank you \ud83d\ude0a"
     },
     {
-        "template_key": "payment_repeat_reminder_email",
-        "channel": "email",
-        "subject": "Payment Reminder – {{event_name}} – ticket {{ticket_number}}",
-        "body": "🔔 Payment Reminder – {{event_name}} – Tampere 🔔\n\nHi {{display_name}}! 👋\nThis is a friendly reminder to complete your payment for the event 🙌\nWe have shared the payment details earlier, but our records show that the payment is still pending.\n\nYour ticket number is *{{ticket_number}}*.\n\n📝 Payment Reference:\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\n\n💳 Payment Breakdown\n{{payment_breakdown}}\n\nPayee Name: {{account_holder}}\nIBAN: {{iban}}\n\nKindly complete the payment as soon as possible to confirm your tickets ✅\n🎟️ Tickets are still open – feel free to invite your friends to register!\nThank you 😊"
+        "template_key":  "payment_repeat_reminder_email",
+        "channel":  "email",
+        "subject":  "Payment Reminder – {{event_name}} – ticket {{ticket_number}}",
+        "body":  "\ud83d\udd14 Payment Reminder \u2013 {{event_name}} \u2013 Tampere \ud83d\udd14\\n\\nHi {{display_name}}! \ud83d\udc4b\\nThis is a friendly reminder to complete your payment for the event \ud83d\ude4c\\nWe have shared the payment details earlier, but our records show that the payment is still pending.\\n\\nYour ticket number is *{{ticket_number}}*.\\n\\n\ud83d\udcdd Payment Reference:\\nPlease add Ticket Number or [Name + Registered Phone Number] as the payment reference.\\n\\n\ud83d\udcb3 Payment Breakdown\\n{{payment_breakdown}}\\n\\nPayee Name: {{account_holder}}\\nIBAN: {{iban}}\\n\\nKindly complete the payment as soon as possible to confirm your tickets \u2705\\n\ud83c\udf9f\ufe0f Tickets are still open \u2013 feel free to invite your friends to register!\\nThank you \ud83d\ude0a"
     }
 ]

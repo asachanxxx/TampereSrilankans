@@ -23,6 +23,7 @@ type Props = {
   whatsappNumber?: string | null;
   open: boolean;
   onClose: () => void;
+  onReminderSent?: () => void;
 };
 
 export function PaymentMessageDialog({
@@ -33,6 +34,7 @@ export function PaymentMessageDialog({
   whatsappNumber,
   open,
   onClose,
+  onReminderSent,
 }: Props) {
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const [copied, setCopied] = useState(false);
@@ -57,6 +59,12 @@ export function PaymentMessageDialog({
       document.body.removeChild(el);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }    // Track reminder sent when copying WhatsApp message
+    if (channel === "whatsapp" && onReminderSent) {
+      onReminderSent();
+    }    // Track reminder sent when copying WhatsApp message
+    if (channel === "whatsapp" && onReminderSent) {
+      onReminderSent();
     }
   };
 
@@ -147,6 +155,7 @@ export function PaymentMessageDialog({
               href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onReminderSent?.()}
             >
               <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white">
                 <MessageCircle className="h-4 w-4" />

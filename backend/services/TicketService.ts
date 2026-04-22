@@ -449,6 +449,21 @@ export class TicketService {
 
     return this.ticketRepo.markBoarded(ticketId, boardedById);
   }
+
+  /**
+   * Increment the reminder_count for a ticket (called when staff copies/sends a reminder).
+   */
+  async recordReminderSent(
+    ticketId: string,
+    actor: AppUser | null
+  ): Promise<{ reminderCount: number }> {
+    requireAuth(actor);
+    if (!isOrganizer(actor)) {
+      throw new AuthorizationError('Only organizers, moderators, and admins can record reminders');
+    }
+    const ticket = await this.ticketRepo.incrementReminderCount(ticketId);
+    return { reminderCount: ticket.reminderCount };
+  }
 }
 
 // ---------------------------------------------------------------------------
