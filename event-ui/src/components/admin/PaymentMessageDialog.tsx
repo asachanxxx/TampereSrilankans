@@ -152,7 +152,9 @@ export function PaymentMessageDialog({
           </Button>
           {whatsappNumber && channel === "whatsapp" && (
             <a
-              href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
+              href={title === "Payment Reminder"
+                ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}`
+                : `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => onReminderSent?.()}
