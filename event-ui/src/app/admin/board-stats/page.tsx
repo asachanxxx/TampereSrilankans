@@ -17,7 +17,6 @@ import {
   Clock,
   Loader2,
   RefreshCw,
-  Utensils,
   Users,
   XCircle,
 } from "lucide-react";
@@ -219,32 +218,6 @@ export default function BoardStatsPage() {
                   <span className="text-red-500">{stats.summary.awaitingPayment} awaiting payment</span>
                 )}
               </p>
-            </CardContent>
-          </Card>
-
-          {/* Meal counts */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Utensils className="h-4 w-4" />
-                Meals (checked-in attendees)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold">{stats.meals.vegMeals}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Vegetarian</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.meals.nonVegMeals}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Non-Veg</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.meals.kidsMeals}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Kids</p>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
