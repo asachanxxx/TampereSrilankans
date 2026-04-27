@@ -26,6 +26,12 @@ type ScanResult = {
     location_name: string;
     city: string;
   } | null;
+  registration: {
+    whatsappNumber: string | null;
+    spouseName: string | null;
+    childrenUnder7Count: number;
+    childrenOver7Count: number;
+  } | null;
 };
 
 type SearchItem = {
@@ -173,6 +179,7 @@ export default function CheckInPage() {
 
   const ticket = result?.ticket;
   const event = result?.event;
+  const registration = result?.registration;
 
   const getPaymentBadge = () => {
     if (!ticket) return null;
@@ -300,6 +307,7 @@ export default function CheckInPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Row 1: Ticket Number + Issued To */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Ticket Number</p>
@@ -310,26 +318,53 @@ export default function CheckInPage() {
                 <p className="font-medium">{ticket.issuedToName}</p>
                 <p className="text-xs text-muted-foreground">{ticket.issuedToEmail}</p>
               </div>
-              {event && (
-                <div className="col-span-2">
-                  <p className="text-xs text-muted-foreground">Event</p>
-                  <p className="font-medium">{event.title}</p>
-                  {event.event_date && (
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(event.event_date).toLocaleDateString()}
-                    </p>
-                  )}
-                  {event.location_name && (
-                    <p className="text-xs text-muted-foreground">
-                      {event.location_name}, {event.city}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Row 2: Board + Scan next buttons */}
+            {ticket.boardingStatus !== "boarded" && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={markBoarded}
+                    disabled={boarding || (ticket.paymentStatus !== "paid" && !isAdmin)}
+                    size="sm"
+                  >
+                    {boarding ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                        Boarding...
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="h-4 w-4 mr-1.5" />
+                        Board
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={scanNext}>
+                    <ScanLine className="h-4 w-4 mr-1.5" />
+                    Scan next
+                  </Button>
+                </div>
+                {!isAdmin && ticket.paymentStatus !== "paid" && (
+                  <p className="text-xs text-amber-700 text-center -mt-1">
+                    Payment must be confirmed (Paid) before boarding can be recorded.
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* Event name only */}
+            {event && (
+              <div className="text-sm">
+                <p className="text-xs text-muted-foreground">Event</p>
+                <p className="font-medium">{event.title}</p>
+              </div>
+            )}
 
             <Separator />
 
+            {/* Payment + Boarding badges */}
             <div className="flex items-center gap-6">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Payment</p>
@@ -341,37 +376,37 @@ export default function CheckInPage() {
               </div>
             </div>
 
-            {ticket.boardingStatus !== "boarded" && (
-              <>
-                <Button
-                  onClick={markBoarded}
-                  disabled={boarding || (ticket.paymentStatus !== "paid" && !isAdmin)}
-                  className="w-full"
-                >
-                  {boarding ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Marking as boarded...
-                    </>
-                  ) : (
-                    <>
-                      <UserCheck className="h-4 w-4 mr-2" />
-                      Mark as Boarded
-                    </>
-                  )}
-                </Button>
-                {!isAdmin && ticket.paymentStatus !== "paid" && (
-                  <p className="text-xs text-amber-700 text-center">
-                    Payment must be confirmed (Paid) before boarding can be recorded.
+            <Separator />
+
+            {/* Registration details */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Spouse</p>
+                <p className="font-medium">{registration?.spouseName || "No Spouse"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="font-medium">{registration?.whatsappNumber || "–"}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground">Children</p>
+                {(registration?.childrenUnder7Count ?? 0) === 0 && (registration?.childrenOver7Count ?? 0) === 0 ? (
+                  <p className="font-medium">No children</p>
+                ) : (
+                  <p className="font-medium">
+                    Under 7: {registration?.childrenUnder7Count ?? 0} &middot; Over 7: {registration?.childrenOver7Count ?? 0}
                   </p>
                 )}
-              </>
-            )}
+              </div>
+            </div>
 
-            <Button variant="outline" className="w-full" onClick={scanNext}>
-              <ScanLine className="h-4 w-4 mr-2" />
-              Scan Next Attendee
-            </Button>
+            {/* Scan next when already boarded */}
+            {ticket.boardingStatus === "boarded" && (
+              <Button variant="outline" className="w-full" onClick={scanNext}>
+                <ScanLine className="h-4 w-4 mr-2" />
+                Scan next
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
