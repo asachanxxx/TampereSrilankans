@@ -168,7 +168,7 @@ export function EventManagementAllTicketsTab({ eventId, paymentInstructions }: P
   const stageCounts = useMemo(() => {
     const counts: Record<TicketStage | "all", number> = {
       all: tickets.length,
-      new: 0, assigned: 0, payment_sent: 0, paid: 0, boarded: 0,
+      new: 0, assigned: 0, payment_sent: 0, paid: 0, paid_bonus: 0, not_coming: 0, boarded: 0,
     };
     tickets.forEach((t) => { counts[deriveTicketStage(t)]++; });
     return counts;

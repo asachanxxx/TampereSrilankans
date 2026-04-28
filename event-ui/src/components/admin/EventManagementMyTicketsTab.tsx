@@ -159,6 +159,8 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
     assigned: tickets.filter(t => deriveTicketStage(t) === "assigned").length,
     payment_sent: tickets.filter(t => deriveTicketStage(t) === "payment_sent").length,
     paid: tickets.filter(t => deriveTicketStage(t) === "paid").length,
+    paid_bonus: tickets.filter(t => deriveTicketStage(t) === "paid_bonus").length,
+    not_coming: tickets.filter(t => deriveTicketStage(t) === "not_coming").length,
     boarded: tickets.filter(t => deriveTicketStage(t) === "boarded").length,
   }), [tickets]);
 
@@ -277,6 +279,8 @@ export function EventManagementMyTicketsTab({ eventId, currentUserId, paymentIns
               id === "assigned" ? stats.assigned :
               id === "payment_sent" ? stats.payment_sent :
               id === "paid" ? stats.paid :
+              id === "paid_bonus" ? stats.paid_bonus :
+              id === "not_coming" ? stats.not_coming :
               id === "boarded" ? stats.boarded : 0;
             const isActive = stageFilter === id;
             return (
