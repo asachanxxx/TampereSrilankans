@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
       // Send ticket email fire-and-forget (failure must not break the response)
       adminSupabase.from('events').select('title').eq('id', eventId).single()
         .then(({ data: eventRow }) => {
-          console.log(`[email] Sending ticket email to ${email} for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
+          console.log(`[email] Sending ticket email for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
           sendTicketEmail(email, fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
-            .then(() => console.log(`[email] Ticket email sent successfully to ${email} (ticket: ${ticket.ticketNumber})`))
-            .catch((err) => console.error(`[email] Failed to send ticket email to ${email}:`, err));
+            .then(() => console.log(`[email] Ticket email sent successfully (ticket: ${ticket.ticketNumber})`))
+            .catch((err) => console.error(`[email] Failed to send ticket email (ticket: ${ticket.ticketNumber}):`, err));
         });
 
       return NextResponse.json(
@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
       supabase.from('events').select('title').eq('id', eventId).single(),
     ]).then(([ticket, { data: eventRow }]) => {
       if (ticket) {
-        console.log(`[email] Sending ticket email to ${formData.email} for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
+      console.log(`[email] Sending ticket email for event "${eventRow?.title}" (ticket: ${ticket.ticketNumber})`);
         sendTicketEmail(formData.email, formData.fullName, eventRow?.title ?? 'the event', ticket.ticketNumber)
-          .then(() => console.log(`[email] Ticket email sent successfully to ${formData.email} (ticket: ${ticket.ticketNumber})`))
-          .catch((err) => console.error(`[email] Failed to send ticket email to ${formData.email}:`, err));
+          .then(() => console.log(`[email] Ticket email sent successfully (ticket: ${ticket.ticketNumber})`))
+          .catch((err) => console.error(`[email] Failed to send ticket email (ticket: ${ticket.ticketNumber}):`, err));
       } else {
         console.warn(`[email] No ticket found for user ${user.id} on event ${eventId} — email not sent.`);
       }

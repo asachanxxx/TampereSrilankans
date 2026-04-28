@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@backend/lib/supabase/server';
 import { buildWhatsAppMessage } from '@/lib/emailService';
 import { formatDate } from '@/lib/format';
+import { requireOrganizer } from '@/lib/auth';
 
 /**
  * GET /api/notifications/whatsapp?ticketNumber=XXXX
@@ -13,6 +14,7 @@ import { formatDate } from '@/lib/format';
  */
 export async function GET(request: NextRequest) {
   try {
+    await requireOrganizer();
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const ticketNumber = searchParams.get('ticketNumber');

@@ -88,7 +88,7 @@ export async function handlePostAuth(authUser: User): Promise<AppUser> {
   try {
     const profile = await profileRepo.getProfileById(authUser.id);
     if (profile) {
-      console.log('✅ Profile found for user:', authUser.email);
+      console.log('✅ Profile found for user:', authUser.id);
 
       // Heal missing email or displayName (e.g. profiles created before email column existed)
       const needsHeal =
@@ -96,7 +96,7 @@ export async function handlePostAuth(authUser: User): Promise<AppUser> {
         (!profile.displayName || profile.displayName === 'User');
 
       if (needsHeal) {
-        console.log('🔧 Healing profile for user:', authUser.email);
+        console.log('🔧 Healing profile for user:', authUser.id);
         const healedDisplayName = profile.displayName && profile.displayName !== 'User'
           ? profile.displayName
           : deriveDisplayName(authUser);
@@ -118,7 +118,7 @@ export async function handlePostAuth(authUser: User): Promise<AppUser> {
   }
 
   // Profile doesn't exist, create it
-  console.log('Creating new profile for user:', authUser.email);
+  console.log('Creating new profile for user:', authUser.id);
   
   try {
     const displayName = deriveDisplayName(authUser);

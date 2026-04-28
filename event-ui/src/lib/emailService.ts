@@ -20,7 +20,7 @@ export async function sendTicketEmail(
   eventTitle: string,
   ticketNumber: string
 ): Promise<void> {
-  console.log(`[emailService] Email sending disabled — skipping ticket email to ${toEmail} (ticket: ${ticketNumber}).`);
+  console.log(`[emailService] Email sending disabled — skipping ticket email (ticket: ${ticketNumber}).`);
 }
 
 /**

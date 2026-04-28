@@ -629,8 +629,10 @@ export default function EventRegisterPage({ params }: { params: { id: string } }
                   />
                   <Label htmlFor="consent" className="leading-relaxed cursor-pointer">
                     I consent to the Tampere Sri Lankans association storing my personal data provided
-                    in this form for the purpose of event management. This data will not be shared
-                    with third parties. <span className="text-destructive">*</span>
+                    in this form for the purpose of event management. My data may be used to send
+                    event notifications via WhatsApp (Meta) and email. Data is retained for up to
+                    6 months after the event and will not be disclosed to any other third parties.{" "}
+                    <span className="text-destructive">*</span>
                   </Label>
                 </div>
               </section>

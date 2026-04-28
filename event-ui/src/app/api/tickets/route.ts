@@ -38,33 +38,40 @@ export async function GET(request: NextRequest) {
         .eq('id', ticket.eventId)
         .single();
 
-      // Fetch registration details (phone, spouse, children)
-      let regRow: { whatsapp_number: string | null; spouse_name: string | null; children_under_7_count: number; children_over_7_count: number } | null = null;
-      if (ticket.userId) {
-        const { data } = await adminSupabase
-          .from('event_registrations')
-          .select('whatsapp_number, spouse_name, children_under_7_count, children_over_7_count')
-          .eq('event_id', ticket.eventId)
-          .eq('user_id', ticket.userId)
-          .single();
-        regRow = data ?? null;
-      }
-      if (!regRow && ticket.issuedToEmail) {
-        const { data } = await adminSupabase
-          .from('event_registrations')
-          .select('whatsapp_number, spouse_name, children_under_7_count, children_over_7_count')
-          .eq('event_id', ticket.eventId)
-          .ilike('email', ticket.issuedToEmail)
-          .single();
-        regRow = data ?? null;
-      }
+      // Only return registration PII (WhatsApp, spouse, children) to authenticated staff
+      const currentUser = await getCurrentUser();
+      const isStaff = currentUser && ['admin', 'moderator', 'organizer'].includes(currentUser.role);
 
-      const registration = regRow ? {
-        whatsappNumber: regRow.whatsapp_number ?? null,
-        spouseName: regRow.spouse_name ?? null,
-        childrenUnder7Count: regRow.children_under_7_count ?? 0,
-        childrenOver7Count: regRow.children_over_7_count ?? 0,
-      } : null;
+      let registration = null;
+      if (isStaff) {
+        let regRow: { whatsapp_number: string | null; spouse_name: string | null; children_under_7_count: number; children_over_7_count: number } | null = null;
+        if (ticket.userId) {
+          const { data } = await adminSupabase
+            .from('event_registrations')
+            .select('whatsapp_number, spouse_name, children_under_7_count, children_over_7_count')
+            .eq('event_id', ticket.eventId)
+            .eq('user_id', ticket.userId)
+            .single();
+          regRow = data ?? null;
+        }
+        if (!regRow && ticket.issuedToEmail) {
+          const { data } = await adminSupabase
+            .from('event_registrations')
+            .select('whatsapp_number, spouse_name, children_under_7_count, children_over_7_count')
+            .eq('event_id', ticket.eventId)
+            .ilike('email', ticket.issuedToEmail)
+            .single();
+          regRow = data ?? null;
+        }
+        if (regRow) {
+          registration = {
+            whatsappNumber: regRow.whatsapp_number ?? null,
+            spouseName: regRow.spouse_name ?? null,
+            childrenUnder7Count: regRow.children_under_7_count ?? 0,
+            childrenOver7Count: regRow.children_over_7_count ?? 0,
+          };
+        }
+      }
 
       return NextResponse.json({ ticket, event: eventRow ?? null, registration }, { status: 200 });
     }
