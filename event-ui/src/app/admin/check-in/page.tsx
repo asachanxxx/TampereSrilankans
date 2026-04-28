@@ -185,6 +185,10 @@ export default function CheckInPage() {
     if (!ticket) return null;
     if (ticket.paymentStatus === "paid")
       return <Badge className="bg-green-600 text-white">Paid</Badge>;
+    if (ticket.paymentStatus === "paid_bonus")
+      return <Badge className="bg-teal-600 text-white">Paid + Bonus</Badge>;
+    if (ticket.paymentStatus === "not_coming")
+      return <Badge className="bg-rose-600 text-white">Not Coming</Badge>;
     if (ticket.paymentStatus === "payment_sent")
       return <Badge variant="secondary">Payment Sent</Badge>;
     return <Badge variant="destructive">Unpaid</Badge>;

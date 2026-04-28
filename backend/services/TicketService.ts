@@ -425,7 +425,7 @@ export class TicketService {
    *
    * Rules:
    *  - Actor must be organizer, moderator, or admin.
-   *  - payment_status must be 'paid'.
+   *  - payment_status must be 'paid' or 'paid_bonus'.
    */
   async markBoarded(
     ticketId: string,
@@ -443,7 +443,7 @@ export class TicketService {
     if (ticket.boardingStatus === 'boarded') {
       throw new Error('Ticket has already been boarded');
     }
-    if (ticket.paymentStatus !== 'paid' && !isAdmin(actor)) {
+    if (ticket.paymentStatus !== 'paid' && ticket.paymentStatus !== 'paid_bonus' && !isAdmin(actor)) {
       throw new Error('Only paid tickets can be boarded');
     }
 

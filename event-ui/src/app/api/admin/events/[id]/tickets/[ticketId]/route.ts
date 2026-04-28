@@ -12,7 +12,7 @@ import { TicketStage } from '@/models/ticket';
  * Body options:
  *   issuedToName?, issuedToEmail?       — edit display fields
  *   assignedToId?                       — (re)assign directly
- *   targetStage?                        — 'new' | 'assigned' | 'payment_sent' | 'paid' | 'boarded'
+ *   targetStage?                        — 'new' | 'assigned' | 'payment_sent' | 'paid' | 'paid_bonus' | 'not_coming' | 'boarded'
  *     Setting a targetStage computes all necessary column values automatically.
  */
 export async function PATCH(
@@ -82,6 +82,19 @@ export async function PATCH(
         case 'paid':
           fields.paymentStatus = 'paid';
           fields.paidAt = now;
+          fields.boardingStatus = null;
+          fields.boardedAt = null;
+          fields.boardedById = null;
+          break;
+        case 'paid_bonus':
+          fields.paymentStatus = 'paid_bonus';
+          fields.paidAt = now;
+          fields.boardingStatus = null;
+          fields.boardedAt = null;
+          fields.boardedById = null;
+          break;
+        case 'not_coming':
+          fields.paymentStatus = 'not_coming';
           fields.boardingStatus = null;
           fields.boardedAt = null;
           fields.boardedById = null;
