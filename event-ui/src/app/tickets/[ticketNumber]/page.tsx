@@ -96,7 +96,6 @@ export default function PublicTicketPage({ params }: { params: { ticketNumber: s
             <div>
               <div className="text-sm font-medium text-muted-foreground">Issued To</div>
               <div className="text-sm mt-1">{ticket.issuedToName}</div>
-              <div className="text-sm text-muted-foreground">{ticket.issuedToEmail}</div>
             </div>
 
             <Separator />
