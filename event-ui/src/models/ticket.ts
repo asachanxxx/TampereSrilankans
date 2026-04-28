@@ -3,7 +3,7 @@
 // -------------------------------------------------------
 
 /** NULL = new (no payment action yet) */
-export type TicketPaymentStatus = 'payment_sent' | 'paid' | null;
+export type TicketPaymentStatus = 'payment_sent' | 'paid' | 'paid_bonus' | 'not_coming' | null;
 
 /** NULL = not yet boarded at event entrance */
 export type TicketBoardingStatus = 'boarded' | null;
@@ -13,11 +13,13 @@ export type TicketBoardingStatus = 'boarded' | null;
  * Computed from the three independent status columns.
  * new → assigned → payment_sent → paid → boarded
  */
-export type TicketStage = 'new' | 'assigned' | 'payment_sent' | 'paid' | 'boarded';
+export type TicketStage = 'new' | 'assigned' | 'payment_sent' | 'paid' | 'paid_bonus' | 'not_coming' | 'boarded';
 
 /** Derive the current stage from a ticket's status columns. */
 export function deriveTicketStage(ticket: Ticket): TicketStage {
   if (ticket.boardingStatus === 'boarded') return 'boarded';
+  if (ticket.paymentStatus === 'paid_bonus') return 'paid_bonus';
+  if (ticket.paymentStatus === 'not_coming') return 'not_coming';
   if (ticket.paymentStatus === 'paid') return 'paid';
   if (ticket.paymentStatus === 'payment_sent') return 'payment_sent';
   if (ticket.assignedToId !== null) return 'assigned';

@@ -37,8 +37,10 @@ export async function GET(request: NextRequest) {
 
     const all = tickets ?? [];
     const boarded = all.filter((t) => t.boarding_status === 'boarded');
-    const paid = all.filter((t) => t.payment_status === 'paid' && t.boarding_status !== 'boarded');
-    const awaitingPayment = all.filter((t) => t.payment_status !== 'paid' && t.boarding_status !== 'boarded');
+    // Exclude 'not_coming' from all counts — they won't arrive
+    const active = all.filter((t) => t.payment_status !== 'not_coming');
+    const paid = active.filter((t) => (t.payment_status === 'paid' || t.payment_status === 'paid_bonus') && t.boarding_status !== 'boarded');
+    const awaitingPayment = active.filter((t) => t.payment_status !== 'paid' && t.payment_status !== 'paid_bonus' && t.boarding_status !== 'boarded');
 
     // Meal counts from registrations of ALL registrants (not just boarded)
     const { data: regRows } = await supabase
@@ -81,11 +83,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       summary: {
-        total: all.length,
+        total: active.length,
         boarded: boarded.length,
         pendingArrival: paid.length,
         awaitingPayment: awaitingPayment.length,
-        completionPct: all.length > 0 ? Math.round((boarded.length / all.length) * 100) : 0,
+        completionPct: active.length > 0 ? Math.round((boarded.length / active.length) * 100) : 0,
       },
       meals: { vegMeals, nonVegMeals, kidsMeals },
       recentCheckIns,

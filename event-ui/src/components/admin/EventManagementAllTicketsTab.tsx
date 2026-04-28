@@ -54,6 +54,8 @@ const STAGES: { id: TicketStage | "all"; label: string }[] = [
   { id: "assigned", label: "Assigned" },
   { id: "payment_sent", label: "Payment Sent" },
   { id: "paid", label: "Paid" },
+  { id: "paid_bonus", label: "Paid + Bonus" },
+  { id: "not_coming", label: "Not Coming" },
   { id: "boarded", label: "Boarded" },
 ];
 
@@ -62,6 +64,8 @@ const stageStyle: Record<TicketStage, string> = {
   assigned: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200",
   payment_sent: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200",
   paid: "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 border-green-200",
+  paid_bonus: "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border-teal-200",
+  not_coming: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200",
   boarded: "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200",
 };
 
@@ -71,6 +75,8 @@ const stagePillActive: Record<TicketStage | "all", string> = {
   assigned: "bg-blue-600 text-white",
   payment_sent: "bg-amber-500 text-white",
   paid: "bg-green-600 text-white",
+  paid_bonus: "bg-teal-600 text-white",
+  not_coming: "bg-rose-600 text-white",
   boarded: "bg-purple-600 text-white",
 };
 

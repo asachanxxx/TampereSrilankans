@@ -326,7 +326,7 @@ export default function CheckInPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={markBoarded}
-                    disabled={boarding || (ticket.paymentStatus !== "paid" && !isAdmin)}
+                    disabled={boarding || (ticket.paymentStatus !== "paid" && ticket.paymentStatus !== "paid_bonus" && !isAdmin)}
                     size="sm"
                   >
                     {boarding ? (
@@ -346,7 +346,7 @@ export default function CheckInPage() {
                     Scan next
                   </Button>
                 </div>
-                {!isAdmin && ticket.paymentStatus !== "paid" && (
+                {!isAdmin && ticket.paymentStatus !== "paid" && ticket.paymentStatus !== "paid_bonus" && (
                   <p className="text-xs text-amber-700 text-center -mt-1">
                     Payment must be confirmed (Paid) before boarding can be recorded.
                   </p>

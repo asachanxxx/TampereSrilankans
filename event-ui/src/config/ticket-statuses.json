@@ -28,5 +28,17 @@
     "label": "Boarded",
     "description": "Attendee has been checked in at the event entrance.",
     "color": "purple"
+  },
+  {
+    "id": "paid_bonus",
+    "label": "Paid + Bonus",
+    "description": "Payment confirmed and a special bonus has been applied to this ticket.",
+    "color": "teal"
+  },
+  {
+    "id": "not_coming",
+    "label": "Not Coming",
+    "description": "Attendee has confirmed they will not be attending the event.",
+    "color": "rose"
   }
 ]

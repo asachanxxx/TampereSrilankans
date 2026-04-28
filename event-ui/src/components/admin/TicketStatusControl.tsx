@@ -11,6 +11,8 @@ const STAGES: { stage: TicketStage; label: string; color: string }[] = [
   { stage: "assigned", label: "Assigned", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   { stage: "payment_sent", label: "Payment Sent", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
   { stage: "paid", label: "Paid", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+  { stage: "paid_bonus", label: "Paid + Bonus", color: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200" },
+  { stage: "not_coming", label: "Not Coming", color: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200" },
   { stage: "boarded", label: "Boarded", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
 ];
 
