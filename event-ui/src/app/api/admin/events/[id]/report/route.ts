@@ -140,7 +140,10 @@ export async function GET(
       if (tixErr) throw tixErr;
 
       const pi = event?.payment_instructions as any;
-      const ticketPrice: number = typeof pi?.amount_per_person === 'number' ? pi.amount_per_person : 0;
+      // JSONB is stored with camelCase keys (serialised directly from TypeScript)
+      const ticketPrice: number =
+        typeof pi?.adultTicketPrice === 'number' ? pi.adultTicketPrice :
+        typeof pi?.amountPerPerson  === 'number' ? pi.amountPerPerson  : 0;
       const currency: string = pi?.currency ?? 'EUR';
 
       const statusLabel = (t: { boarding_status: string | null; payment_status: string | null }) => {
