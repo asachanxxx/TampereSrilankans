@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock, ScanLine, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock, ScanLine, BarChart2, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,6 +31,7 @@ const adminNavItems = [
   { href: "/admin/event-management", icon: ClipboardList, label: "Event Mgmt" },
   { href: "/admin/check-in", icon: ScanLine, label: "Check-in" },
   { href: "/admin/board-stats", icon: BarChart2, label: "Board Stats" },
+  { href: "/admin/reports", icon: FileBarChart, label: "Reports" },
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/permissions", icon: Lock, label: "Permissions" },
   { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },
