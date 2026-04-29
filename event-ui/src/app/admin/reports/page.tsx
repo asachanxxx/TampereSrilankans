@@ -47,8 +47,8 @@ type PaidTicketRow = {
   ticketNumber: string; name: string; status: string;
   adults: number; childrenOver7: number; paidAt: string;
 };
-type FinancialRow = { ticketNumber: string; status: string; amount: number };
-type FinancialSummaryData = { ticketPrice: number; currency: string; rows: FinancialRow[] };
+type FinancialRow = { ticketNumber: string; status: string; adults: number; children: number; amount: number };
+type FinancialSummaryData = { adultPrice: number; childPrice: number; currency: string; rows: FinancialRow[] };
 type AnyRow = AttendeeRow | MealRow | ChildrenRow | PaidTicketRow;
 
 type EventItem = { id: string; title: string; event_date?: string | null };
@@ -142,11 +142,11 @@ function buildTableData(type: ReportType, rows: AnyRow[] | FinancialSummaryData)
   const fs = rows as FinancialSummaryData;
   const fsTotal = fs.rows.reduce((sum, r) => sum + r.amount, 0);
   return {
-    headers: ["Ticket #", "Status", "Ticket Price", "Amount"],
+    headers: ["Ticket #", "Status", "Adults", "Children (7+)", "Ticket Price", "Amount"],
     data: [
-      ...fs.rows.map((r) => [r.ticketNumber, r.status, `${fs.currency} ${r.amount.toFixed(2)}`, `${fs.currency} ${r.amount.toFixed(2)}`]),
-      ["", "", "", ""],
-      ["Total Amount", "", "", `${fs.currency} ${fsTotal.toFixed(2)}`],
+      ...fs.rows.map((r) => [r.ticketNumber, r.status, String(r.adults), String(r.children), `${fs.currency} ${(fs.adultPrice * r.adults + fs.childPrice * r.children).toFixed(2)}`, `${fs.currency} ${r.amount.toFixed(2)}`]),
+      ["", "", "", "", "", ""],
+      ["Total Amount", "", "", "", "", `${fs.currency} ${fsTotal.toFixed(2)}`],
     ],
   };
 }
@@ -337,10 +337,13 @@ function FinancialSummaryView({ data }: { data: FinancialSummaryData }) {
     return data.rows;
   }, [data.rows, statusFilter]);
   const totalAmount = useMemo(() => filtered.reduce((sum, r) => sum + r.amount, 0), [filtered]);
+  const priceBreakdown = data.childPrice > 0
+    ? `Adult: ${data.currency} ${data.adultPrice.toFixed(2)} · Child (7+): ${data.currency} ${data.childPrice.toFixed(2)}`
+    : `Per person: ${data.currency} ${data.adultPrice.toFixed(2)}`;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <p className="text-xs text-muted-foreground">{filtered.length} of {data.rows.length} tickets</p>
+        <p className="text-xs text-muted-foreground">{filtered.length} of {data.rows.length} tickets · <span className="font-medium text-foreground">{priceBreakdown}</span></p>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-8 w-52 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -356,6 +359,8 @@ function FinancialSummaryView({ data }: { data: FinancialSummaryData }) {
             <tr>
               <th className="px-3 py-2 text-left whitespace-nowrap">Ticket #</th>
               <th className="px-3 py-2 text-left whitespace-nowrap">Status</th>
+              <th className="px-3 py-2 text-center whitespace-nowrap">Adults</th>
+              <th className="px-3 py-2 text-center whitespace-nowrap">Children (7+)</th>
               <th className="px-3 py-2 text-right whitespace-nowrap">Ticket Price</th>
               <th className="px-3 py-2 text-right whitespace-nowrap">Amount</th>
             </tr>
@@ -365,15 +370,20 @@ function FinancialSummaryView({ data }: { data: FinancialSummaryData }) {
               <tr key={i} className="border-t hover:bg-muted/30">
                 <td className="px-3 py-2 font-mono text-xs">{r.ticketNumber}</td>
                 <td className="px-3 py-2"><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-muted"}`}>{r.status}</span></td>
-                <td className="px-3 py-2 text-right">{data.currency} {data.ticketPrice.toFixed(2)}</td>
+                <td className="px-3 py-2 text-center">{r.adults}</td>
+                <td className="px-3 py-2 text-center">{r.children > 0 ? r.children : "—"}</td>
+                <td className="px-3 py-2 text-right text-muted-foreground text-xs">
+                  {r.adults}×{data.currency}{data.adultPrice.toFixed(2)}
+                  {r.children > 0 && ` + ${r.children}×${data.currency}${data.childPrice.toFixed(2)}`}
+                </td>
                 <td className="px-3 py-2 text-right font-medium">{data.currency} {r.amount.toFixed(2)}</td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">No tickets found</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">No tickets found</td></tr>}
           </tbody>
           <tfoot className="border-t-2 bg-muted/30 font-semibold">
             <tr>
-              <td colSpan={3} className="px-3 py-3 text-right">Total Amount</td>
+              <td colSpan={5} className="px-3 py-3 text-right">Total Amount</td>
               <td className="px-3 py-3 text-right text-base font-bold">{data.currency} {totalAmount.toFixed(2)}</td>
             </tr>
           </tfoot>

@@ -128,23 +128,33 @@ export async function GET(
 
     // ── Financial Summary report ─────────────────────────────────────────────
     if (type === 'financial_summary') {
-      const [{ data: event }, { data: tix, error: tixErr }] = await Promise.all([
+      const [{ data: event }, { data: tix, error: tixErr }, { data: regs, error: regErr }] = await Promise.all([
         supabase.from('events').select('payment_instructions').eq('id', eventId).single(),
         supabase
           .from('tickets')
-          .select('ticket_number, payment_status, boarding_status')
+          .select('ticket_number, payment_status, boarding_status, user_id, issued_to_email')
           .eq('event_id', eventId)
           .order('ticket_number', { ascending: true }),
+        supabase
+          .from('event_registrations')
+          .select('user_id, email, spouse_name, children_over_7_count')
+          .eq('event_id', eventId),
       ]);
 
       if (tixErr) throw tixErr;
+      if (regErr) throw regErr;
 
       const pi = event?.payment_instructions as any;
       // JSONB is stored with camelCase keys (serialised directly from TypeScript)
-      const ticketPrice: number =
+      const adultPrice: number =
         typeof pi?.adultTicketPrice === 'number' ? pi.adultTicketPrice :
         typeof pi?.amountPerPerson  === 'number' ? pi.amountPerPerson  : 0;
+      const childPrice: number =
+        typeof pi?.childTicketPrice === 'number' ? pi.childTicketPrice : 0;
       const currency: string = pi?.currency ?? 'EUR';
+
+      const regByUserId = new Map((regs ?? []).filter((r) => r.user_id).map((r) => [r.user_id!, r]));
+      const regByEmail  = new Map((regs ?? []).map((r) => [r.email?.toLowerCase() ?? '', r]));
 
       const statusLabel = (t: { boarding_status: string | null; payment_status: string | null }) => {
         if (t.boarding_status === 'boarded') return 'Boarded';
@@ -155,13 +165,22 @@ export async function GET(
         return 'Unpaid';
       };
 
-      const rows = (tix ?? []).map((t) => ({
-        ticketNumber: t.ticket_number,
-        status: statusLabel(t),
-        amount: ticketPrice,
-      }));
+      const rows = (tix ?? []).map((t) => {
+        const reg = (t.user_id ? regByUserId.get(t.user_id) : undefined)
+          ?? regByEmail.get((t.issued_to_email ?? '').toLowerCase());
+        const adultCount = 1 + (reg?.spouse_name?.trim() ? 1 : 0);
+        const childCount = reg?.children_over_7_count ?? 0;
+        const amount = adultPrice * adultCount + childPrice * childCount;
+        return {
+          ticketNumber: t.ticket_number,
+          status: statusLabel(t),
+          adults: adultCount,
+          children: childCount,
+          amount,
+        };
+      });
 
-      return NextResponse.json({ rows, ticketPrice, currency }, { status: 200 });
+      return NextResponse.json({ rows, adultPrice, childPrice, currency }, { status: 200 });
     }
 
     // ── Attendees report ─────────────────────────────────────────────────────
