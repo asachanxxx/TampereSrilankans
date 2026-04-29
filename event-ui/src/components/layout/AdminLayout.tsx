@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock, ScanLine, BarChart2, FileBarChart } from "lucide-react";
+import { LayoutDashboard, Calendar, ClipboardList, Settings, Menu, ShieldCheck, Users, Lock, ScanLine, BarChart2, FileBarChart, Citrus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +35,7 @@ const adminNavItems = [
   { href: "/admin/users", icon: Users, label: "Users" },
   { href: "/admin/permissions", icon: Lock, label: "Permissions" },
   { href: "/admin/settings", icon: Settings, label: "Settings", disabled: true },
+  { href: "/papaya", icon: Citrus, label: "Papaya" },
 ];
 
 const staffNavItems = [
