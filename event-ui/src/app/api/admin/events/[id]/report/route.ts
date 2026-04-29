@@ -85,10 +85,9 @@ export async function GET(
       const [{ data: tix, error: tixErr }, { data: regs, error: regErr }] = await Promise.all([
         supabase
           .from('tickets')
-          .select('id, ticket_number, issued_to_name, issued_to_email, payment_status, boarding_status, paid_at, boarded_at, assigned_to_id, user_id')
+          .select('ticket_number, issued_to_name, issued_to_email, payment_status, boarding_status, paid_at, user_id')
           .eq('event_id', eventId)
-          .in('payment_status', ['paid', 'paid_bonus'])
-          .order('paid_at', { ascending: false }),
+          .order('issued_to_name', { ascending: true }),
         supabase
           .from('event_registrations')
           .select('user_id, email, spouse_name, children_over_7_count')
@@ -98,46 +97,29 @@ export async function GET(
       if (tixErr) throw tixErr;
       if (regErr) throw regErr;
 
-      // Also include boarded tickets regardless of payment_status
-      const { data: boardedTix } = await supabase
-        .from('tickets')
-        .select('id, ticket_number, issued_to_name, issued_to_email, payment_status, boarding_status, paid_at, boarded_at, assigned_to_id, user_id')
-        .eq('event_id', eventId)
-        .eq('boarding_status', 'boarded')
-        .not('payment_status', 'in', '("paid","paid_bonus")');
-
-      const allTix = [...(tix ?? []), ...(boardedTix ?? [])];
-
-      const assignedIds = [...new Set(allTix.filter((t) => t.assigned_to_id).map((t) => t.assigned_to_id as string))];
-      const { data: profileRows } = assignedIds.length > 0
-        ? await supabase.from('profiles').select('id, display_name').in('id', assignedIds)
-        : { data: [] as { id: string; display_name: string }[] };
-      const profileMap: Record<string, string> = Object.fromEntries((profileRows ?? []).map((p) => [p.id, p.display_name]));
-
       const regByUserId = new Map((regs ?? []).filter((r) => r.user_id).map((r) => [r.user_id!, r]));
       const regByEmail = new Map((regs ?? []).map((r) => [r.email?.toLowerCase() ?? '', r]));
 
-      const statusLabel = (t: typeof allTix[0]) => {
+      const statusLabel = (t: { boarding_status: string | null; payment_status: string | null }) => {
         if (t.boarding_status === 'boarded') return 'Boarded';
         if (t.payment_status === 'paid_bonus') return 'Paid + Bonus';
-        return 'Paid';
+        if (t.payment_status === 'paid') return 'Paid';
+        if (t.payment_status === 'payment_sent') return 'Payment Sent';
+        if (t.payment_status === 'not_coming') return 'Not Coming';
+        return 'Unpaid';
       };
 
-      const rows = allTix.map((t) => {
+      const rows = (tix ?? []).map((t) => {
         const reg = (t.user_id ? regByUserId.get(t.user_id) : undefined)
           ?? regByEmail.get((t.issued_to_email ?? '').toLowerCase());
         const adults = 1 + (reg?.spouse_name?.trim() ? 1 : 0);
         return {
           ticketNumber: t.ticket_number,
           name: t.issued_to_name,
-          email: t.issued_to_email,
           status: statusLabel(t),
           adults,
           childrenOver7: reg?.children_over_7_count ?? 0,
           paidAt: t.paid_at ?? '',
-          boardedAt: t.boarded_at ?? '',
-          assignedStaff: t.assigned_to_id ? (profileMap[t.assigned_to_id] ?? 'Unknown') : '—',
-          boarded: t.boarding_status === 'boarded' ? 'Yes' : 'No',
         };
       });
 
@@ -146,42 +128,37 @@ export async function GET(
 
     // ── Financial Summary report ─────────────────────────────────────────────
     if (type === 'financial_summary') {
-      const { data: tix, error: tixErr } = await supabase
-        .from('tickets')
-        .select('payment_status, boarding_status, assigned_to_id')
-        .eq('event_id', eventId);
+      const [{ data: event }, { data: tix, error: tixErr }] = await Promise.all([
+        supabase.from('events').select('payment_instructions').eq('id', eventId).single(),
+        supabase
+          .from('tickets')
+          .select('ticket_number, payment_status, boarding_status')
+          .eq('event_id', eventId)
+          .order('ticket_number', { ascending: true }),
+      ]);
 
       if (tixErr) throw tixErr;
 
-      const all = tix ?? [];
-      const counts = {
-        boarded:       all.filter((t) => t.boarding_status === 'boarded').length,
-        paid:          all.filter((t) => t.payment_status === 'paid' && t.boarding_status !== 'boarded').length,
-        paid_bonus:    all.filter((t) => t.payment_status === 'paid_bonus' && t.boarding_status !== 'boarded').length,
-        payment_sent:  all.filter((t) => t.payment_status === 'payment_sent').length,
-        not_coming:    all.filter((t) => t.payment_status === 'not_coming').length,
-        assigned:      all.filter((t) => t.payment_status === null && t.assigned_to_id !== null && t.boarding_status !== 'boarded').length,
-        new:           all.filter((t) => t.payment_status === null && t.assigned_to_id === null).length,
+      const pi = event?.payment_instructions as any;
+      const ticketPrice: number = typeof pi?.amount_per_person === 'number' ? pi.amount_per_person : 0;
+      const currency: string = pi?.currency ?? 'EUR';
+
+      const statusLabel = (t: { boarding_status: string | null; payment_status: string | null }) => {
+        if (t.boarding_status === 'boarded') return 'Boarded';
+        if (t.payment_status === 'paid_bonus') return 'Paid + Bonus';
+        if (t.payment_status === 'paid') return 'Paid';
+        if (t.payment_status === 'payment_sent') return 'Payment Sent';
+        if (t.payment_status === 'not_coming') return 'Not Coming';
+        return 'Unpaid';
       };
 
-      const statusBreakdown = [
-        { status: 'Boarded',        count: counts.boarded },
-        { status: 'Paid',           count: counts.paid },
-        { status: 'Paid + Bonus',   count: counts.paid_bonus },
-        { status: 'Payment Sent',   count: counts.payment_sent },
-        { status: 'Not Coming',     count: counts.not_coming },
-        { status: 'Assigned',       count: counts.assigned },
-        { status: 'New',            count: counts.new },
-      ];
+      const rows = (tix ?? []).map((t) => ({
+        ticketNumber: t.ticket_number,
+        status: statusLabel(t),
+        amount: ticketPrice,
+      }));
 
-      return NextResponse.json({
-        statusBreakdown,
-        totalPaid: counts.boarded + counts.paid + counts.paid_bonus,
-        totalPending: counts.payment_sent,
-        totalNotComing: counts.not_coming,
-        totalUnpaid: counts.assigned + counts.new,
-        grandTotal: all.length,
-      }, { status: 200 });
+      return NextResponse.json({ rows, ticketPrice, currency }, { status: 200 });
     }
 
     // ── Attendees report ─────────────────────────────────────────────────────

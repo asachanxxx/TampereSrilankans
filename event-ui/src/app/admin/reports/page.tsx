@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/select";
 import {
   Baby,
-  CheckCircle2,
-  Clock,
   Download,
   FileBarChart,
   FileText,
@@ -23,7 +21,6 @@ import {
   Ticket,
   Users,
   Utensils,
-  XCircle,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -47,18 +44,11 @@ type ChildrenRow = {
   under7: number; over7: number; total: number; notes: string;
 };
 type PaidTicketRow = {
-  ticketNumber: string; name: string; email: string; status: string;
-  adults: number; childrenOver7: number; paidAt: string; boardedAt: string;
-  assignedStaff: string; boarded: string;
+  ticketNumber: string; name: string; status: string;
+  adults: number; childrenOver7: number; paidAt: string;
 };
-type FinancialSummaryData = {
-  statusBreakdown: { status: string; count: number }[];
-  totalPaid: number;
-  totalPending: number;
-  totalNotComing: number;
-  totalUnpaid: number;
-  grandTotal: number;
-};
+type FinancialRow = { ticketNumber: string; status: string; amount: number };
+type FinancialSummaryData = { ticketPrice: number; currency: string; rows: FinancialRow[] };
 type AnyRow = AttendeeRow | MealRow | ChildrenRow | PaidTicketRow;
 
 type EventItem = { id: string; title: string; event_date?: string | null };
@@ -144,18 +134,19 @@ function buildTableData(type: ReportType, rows: AnyRow[] | FinancialSummaryData)
   }
   if (type === "paid_tickets") {
     return {
-      headers: ["Ticket #", "Name", "Email", "Status", "Adults", "Children (7+)", "Paid At", "Boarded At", "Assigned Staff", "Boarded"],
-      data: (rows as PaidTicketRow[]).map((r) => [r.ticketNumber, r.name, r.email, r.status, String(r.adults), String(r.childrenOver7), formatDateTime(r.paidAt), formatDateTime(r.boardedAt), r.assignedStaff, r.boarded]),
+      headers: ["Ticket #", "Name", "Status", "Adults", "Children (7+)", "Paid At", "Boarded"],
+      data: (rows as PaidTicketRow[]).map((r) => [r.ticketNumber, r.name, r.status, String(r.adults), String(r.childrenOver7), formatDateTime(r.paidAt), ""]),
     };
   }
   // financial_summary
   const fs = rows as FinancialSummaryData;
+  const fsTotal = fs.rows.reduce((sum, r) => sum + r.amount, 0);
   return {
-    headers: ["Status", "Count"],
+    headers: ["Ticket #", "Status", "Ticket Price", "Amount"],
     data: [
-      ...fs.statusBreakdown.map((s) => [s.status, String(s.count)]),
-      ["", ""],
-      ["Grand Total", String(fs.grandTotal)],
+      ...fs.rows.map((r) => [r.ticketNumber, r.status, `${fs.currency} ${r.amount.toFixed(2)}`, `${fs.currency} ${r.amount.toFixed(2)}`]),
+      ["", "", "", ""],
+      ["Total Amount", "", "", `${fs.currency} ${fsTotal.toFixed(2)}`],
     ],
   };
 }
@@ -286,34 +277,51 @@ function ChildrenTable({ rows, search }: { rows: ChildrenRow[]; search: string }
 }
 
 function PaidTicketsTable({ rows, search }: { rows: PaidTicketRow[]; search: string }) {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return !q ? rows : rows.filter((r) => [r.ticketNumber, r.name, r.email, r.status, r.assignedStaff].some((v) => v.toLowerCase().includes(q)));
-  }, [rows, search]);
+    return rows.filter((r) => {
+      const matchesSearch = !q || [r.ticketNumber, r.name, r.status].some((v) => v.toLowerCase().includes(q));
+      const matchesFilter =
+        statusFilter === "paid"       ? (r.status === "Paid" || r.status === "Boarded") :
+        statusFilter === "paid_bonus" ? r.status === "Paid + Bonus" :
+        statusFilter === "not_paid"   ? !["Paid", "Paid + Bonus", "Boarded"].includes(r.status) :
+        true;
+      return matchesSearch && matchesFilter;
+    });
+  }, [rows, search, statusFilter]);
   return (
     <>
-      <p className="text-xs text-muted-foreground mb-2">{filtered.length} of {rows.length} tickets</p>
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <p className="text-xs text-muted-foreground">{filtered.length} of {rows.length} tickets</p>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Tickets</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="paid_bonus">Paid + Bonus</SelectItem>
+            <SelectItem value="not_paid">Not Paid</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="rounded-lg border overflow-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs font-medium">
-            <tr>{["Ticket #","Name","Email","Status","Adults","Children (7+)","Paid At","Boarded At","Staff","Boarded"].map((h) => <th key={h} className="px-3 py-2 text-left whitespace-nowrap">{h}</th>)}</tr>
+            <tr>{["Ticket #","Name","Status","Adults","Children (7+)","Paid At","Boarded"].map((h) => <th key={h} className="px-3 py-2 text-left whitespace-nowrap">{h}</th>)}</tr>
           </thead>
           <tbody>
             {filtered.map((r, i) => (
               <tr key={i} className="border-t hover:bg-muted/30">
                 <td className="px-3 py-2 font-mono text-xs">{r.ticketNumber}</td>
                 <td className="px-3 py-2 font-medium whitespace-nowrap">{r.name}</td>
-                <td className="px-3 py-2 text-muted-foreground">{r.email}</td>
                 <td className="px-3 py-2"><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-muted"}`}>{r.status}</span></td>
                 <td className="px-3 py-2 text-center">{r.adults}</td>
                 <td className="px-3 py-2 text-center">{r.childrenOver7}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(r.paidAt)}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(r.boardedAt)}</td>
-                <td className="px-3 py-2">{r.assignedStaff}</td>
-                <td className="px-3 py-2 text-center">{r.boarded === "Yes" ? <CheckCircle2 className="h-4 w-4 text-green-600 inline" /> : <Clock className="h-4 w-4 text-amber-500 inline" />}</td>
+                <td className="px-3 py-2 w-16"></td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">No paid tickets found</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">No tickets found</td></tr>}
           </tbody>
         </table>
       </div>
@@ -322,43 +330,53 @@ function PaidTicketsTable({ rows, search }: { rows: PaidTicketRow[]; search: str
 }
 
 function FinancialSummaryView({ data }: { data: FinancialSummaryData }) {
-  const summaryCards = [
-    { label: "Grand Total",       value: data.grandTotal,      icon: <Users        className="h-4 w-4" />,       color: "text-foreground"     },
-    { label: "Paid / Boarded",    value: data.totalPaid,        icon: <CheckCircle2 className="h-4 w-4" />,       color: "text-green-600"      },
-    { label: "Pending Payment",   value: data.totalPending,     icon: <Clock        className="h-4 w-4" />,       color: "text-amber-600"      },
-    { label: "Not Coming",        value: data.totalNotComing,   icon: <XCircle      className="h-4 w-4" />,       color: "text-rose-600"       },
-    { label: "Unpaid",            value: data.totalUnpaid,      icon: <Ticket       className="h-4 w-4" />,       color: "text-zinc-500"       },
-  ];
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const filtered = useMemo(() => {
+    if (statusFilter === "paid_plus")    return data.rows.filter((r) => ["Paid", "Paid + Bonus", "Boarded"].includes(r.status));
+    if (statusFilter === "payment_sent") return data.rows.filter((r) => r.status === "Payment Sent");
+    return data.rows;
+  }, [data.rows, statusFilter]);
+  const totalAmount = useMemo(() => filtered.reduce((sum, r) => sum + r.amount, 0), [filtered]);
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {summaryCards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="pt-4 pb-3">
-              <div className={`flex items-center gap-1.5 text-xs text-muted-foreground mb-1 ${c.color}`}>{c.icon}{c.label}</div>
-              <p className={`text-3xl font-bold ${c.color}`}>{c.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <p className="text-xs text-muted-foreground">{filtered.length} of {data.rows.length} tickets</p>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-8 w-52 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="paid_plus">Paid + Paid Bonus</SelectItem>
+            <SelectItem value="payment_sent">Payment Sent</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      <div className="rounded-lg border overflow-hidden max-w-xs">
+      <div className="rounded-lg border overflow-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs font-medium">
             <tr>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-right">Count</th>
+              <th className="px-3 py-2 text-left whitespace-nowrap">Ticket #</th>
+              <th className="px-3 py-2 text-left whitespace-nowrap">Status</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">Ticket Price</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {data.statusBreakdown.map((s) => (
-              <tr key={s.status} className="border-t hover:bg-muted/30">
-                <td className="px-4 py-2">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? "bg-muted"}`}>{s.status}</span>
-                </td>
-                <td className="px-4 py-2 text-right font-medium">{s.count}</td>
+            {filtered.map((r, i) => (
+              <tr key={i} className="border-t hover:bg-muted/30">
+                <td className="px-3 py-2 font-mono text-xs">{r.ticketNumber}</td>
+                <td className="px-3 py-2"><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-muted"}`}>{r.status}</span></td>
+                <td className="px-3 py-2 text-right">{data.currency} {data.ticketPrice.toFixed(2)}</td>
+                <td className="px-3 py-2 text-right font-medium">{data.currency} {r.amount.toFixed(2)}</td>
               </tr>
             ))}
+            {filtered.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">No tickets found</td></tr>}
           </tbody>
+          <tfoot className="border-t-2 bg-muted/30 font-semibold">
+            <tr>
+              <td colSpan={3} className="px-3 py-3 text-right">Total Amount</td>
+              <td className="px-3 py-3 text-right text-base font-bold">{data.currency} {totalAmount.toFixed(2)}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
